@@ -1,6 +1,5 @@
 module Main where
 
-import Data.Either (partitionEithers)
 import System.Environment (getArgs)
 
 
@@ -16,37 +15,30 @@ main = do
     ["--list"] -> print rules
 
     -- Evaluate one rule
-    [name] -> print (evaluate name rules)
+    [name] ->
+      print (evaluate name rules [])
     "--set" : var : val : [name] -> do
-      case replace var (Int $ read val) rules of
-        Right rules' -> print $ evaluate name rules'
-        Left err -> print err
+      print $ evaluate name rules [Input var (Int $ read val)]
 
     _ -> error "TODO Usage."
 
 
 --------------------------------------------------------------------------------
-evaluate name rs = case filter ((== name) . rName) rs of
-  [r] -> reduce r rs
+evaluate name rs is = case filter ((== name) . rName) rs of
+  [r] -> reduce r rs is
   [] -> Error NoSuchRule
   _ -> Error MultipleRules
 
-reduce r rs = case rFormula r of
-  Unset -> UnsetVariables [rName r]
+reduce r rs is = case rFormula r of
+  Unset -> case lookupInput (rName r) is of
+    Just (Int x) -> Result (Int x)
+    Just _ -> error "Inputs cannot contain Unset or Name."
+    Nothing -> UnsetVariables [rName r]
   Int x -> Result (Int x)
-  Name name -> evaluate name rs
+  Name name -> evaluate name rs is
 
--- TODO This doesn't make an error it the rule to be replaced doesn't exist.
-replace var val rs = case partitionEithers (map f rs) of
-  ([], rs') -> Right rs'
-  (errors, _) -> Left errors
-  where
-  f r = if rName r == var
-        then
-          if rFormula r == Unset
-          then Right (Rule var val)
-          else Left (RuleCannotBeSet (rName r))
-        else Right r
+lookupInput name is = lookup name is'
+  where is' = map (\(Input name val) -> (name, val)) is
 
 
 --------------------------------------------------------------------------------
@@ -77,18 +69,25 @@ data Result = Result Value | UnsetVariables [String] | Error EvaluationError
 data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
   deriving (Eq, Show)
 
+-- | An input is like the simplest rule: it binds a value to a name.
+-- That value is used to replace an unset variable with the same name.
+-- TODO Raise an error if an input is provided for a variable that cannot be set.
+-- TODO Raise an error if an input is provided for non-existing variable.
+data Input = Input String Value
+
 --------------------------------------------------------------------------------
 tests =
-  [ evaluate "a" [] == Error NoSuchRule
-  , evaluate "a" [Rule "a" (Int 5), Rule "a" (Int 6)] == Error MultipleRules
-  , evaluate "a" [Rule "a" (Int 5)] == Result (Int 5)
-  , evaluate "a" rules == Result (Int 5)
-  , evaluate "b" rules == Result (Int 6)
-  , evaluate "c" rules == Result (Int 6)
-  , evaluate "d" rules == Result (Int 6)
-  , evaluate "e" rules == UnsetVariables ["e"]
-  , replace "a" (Int 4) [rule_1] == Left [RuleCannotBeSet "a"]
-  , replace "e" (Int 4) [rule_5] == Right [Rule "e" (Int 4)]
+  [ evaluate "a" [] [] == Error NoSuchRule
+  , evaluate "a" [Rule "a" (Int 5), Rule "a" (Int 6)] [] == Error MultipleRules
+  , evaluate "a" [Rule "a" (Int 5)] [] == Result (Int 5)
+  , evaluate "a" rules [] == Result (Int 5)
+  , evaluate "b" rules [] == Result (Int 6)
+  , evaluate "c" rules [] == Result (Int 6)
+  , evaluate "d" rules [] == Result (Int 6)
+  , evaluate "e" rules [] == UnsetVariables ["e"]
+  , evaluate "e" rules [Input "e" (Int 4)] == Result (Int 4)
+  , evaluate "f" rules [] == UnsetVariables ["e"]
+  , evaluate "f" rules [Input "e" (Int 4)] == Result (Int 4)
   ] 
 
 --------------------------------------------------------------------------------
