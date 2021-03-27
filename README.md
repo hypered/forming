@@ -9,6 +9,17 @@ I think this could be used to compute payrolls, but also to implement business
 rules regarding e.g. the creation of contract (e.g. what VAT rate can be used,
 if a risk declaration is required, ...).
 
+```
+$ runghc script.hs a
+Result (Int 5)
+
+$ runghc script.hs e
+UnsetVariables ["e"]
+
+$ runghc script.hs --set e 4 e
+Result (Int 4)
+```
+
 
 # Notes
 

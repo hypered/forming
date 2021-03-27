@@ -1,5 +1,6 @@
 module Main where
 
+import Data.Either (partitionEithers)
 import System.Environment (getArgs)
 
 
@@ -16,6 +17,10 @@ main = do
 
     -- Evaluate one rule
     [name] -> print (evaluate name rules)
+    "--set" : var : val : [name] -> do
+      case replace var (Int $ read val) rules of
+        Right rules' -> print $ evaluate name rules'
+        Left err -> print err
 
     _ -> error "TODO Usage."
 
@@ -23,12 +28,25 @@ main = do
 --------------------------------------------------------------------------------
 evaluate name rs = case filter ((== name) . rName) rs of
   [r] -> reduce r rs
-  [] -> Left NoSuchRule
-  _ -> Left MultipleRules
+  [] -> Error NoSuchRule
+  _ -> Error MultipleRules
 
 reduce r rs = case rFormula r of
-  Int x -> Right (Int x)
+  Unset -> UnsetVariables [rName r]
+  Int x -> Result (Int x)
   Name name -> evaluate name rs
+
+-- TODO This doesn't make an error it the rule to be replaced doesn't exist.
+replace var val rs = case partitionEithers (map f rs) of
+  ([], rs') -> Right rs'
+  (errors, _) -> Left errors
+  where
+  f r = if rName r == var
+        then
+          if rFormula r == Unset
+          then Right (Rule var val)
+          else Left (RuleCannotBeSet (rName r))
+        else Right r
 
 
 --------------------------------------------------------------------------------
@@ -44,30 +62,38 @@ data Rule = Rule
   { rName :: String
   , rFormula :: Value
   }
-  deriving Show
+  deriving (Eq, Show)
 
--- A value can be a literal, or the use of a rule.
-data Value = Int Int | Name String
+-- A value can be unset, a literal, or the use of a rule.
+data Value = Unset | Int Int | Name String
   deriving (Eq, Show)
 
 data EvaluationError = NoSuchRule | MultipleRules | Cycles
   deriving (Eq, Show)
 
+data Result = Result Value | UnsetVariables [String] | Error EvaluationError
+  deriving (Eq, Show)
+
+data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
+  deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
 tests =
-  [ evaluate "a" [] == Left NoSuchRule
-  , evaluate "a" [Rule "a" (Int 5), Rule "a" (Int 6)] == Left MultipleRules
-  , evaluate "a" [Rule "a" (Int 5)] == Right (Int 5)
-  , evaluate "a" rules == Right (Int 5)
-  , evaluate "b" rules == Right (Int 6)
-  , evaluate "c" rules == Right (Int 6)
-  , evaluate "d" rules == Right (Int 6)
+  [ evaluate "a" [] == Error NoSuchRule
+  , evaluate "a" [Rule "a" (Int 5), Rule "a" (Int 6)] == Error MultipleRules
+  , evaluate "a" [Rule "a" (Int 5)] == Result (Int 5)
+  , evaluate "a" rules == Result (Int 5)
+  , evaluate "b" rules == Result (Int 6)
+  , evaluate "c" rules == Result (Int 6)
+  , evaluate "d" rules == Result (Int 6)
+  , evaluate "e" rules == UnsetVariables ["e"]
+  , replace "a" (Int 4) [rule_1] == Left [RuleCannotBeSet "a"]
+  , replace "e" (Int 4) [rule_5] == Right [Rule "e" (Int 4)]
   ] 
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
-rules = [rule_1, rule_2, rule_3, rule_4, rule_cycle]
+rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_cycle]
 
 rule_1 = Rule "a" (Int 5)
 
@@ -76,5 +102,7 @@ rule_2 = Rule "b" (Int 6)
 rule_3 = Rule "c" (Name "b")
 
 rule_4 = Rule "d" (Name "c")
+
+rule_5 = Rule "e" Unset
 
 rule_cycle = Rule "cycle" (Name "cycle") -- TODO Find cycles.
