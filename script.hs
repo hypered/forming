@@ -17,6 +17,8 @@ main = do
     -- Evaluate one rule
     [name] ->
       print (evaluate name rules [])
+
+    -- Evaluate one rule, but also provide an input
     "--set" : var : val : [name] -> do
       print $ evaluate name rules [Input var (Int $ read val)]
 
@@ -52,18 +54,18 @@ validate = undefined
 -- to a value. Names can be multiple words, e.g. "meal unit price".
 data Rule = Rule
   { rName :: String
-  , rFormula :: Value
+  , rFormula :: Exp
   }
   deriving (Eq, Show)
 
--- A value can be unset, a literal, or the use of a rule.
-data Value = Unset | Int Int | Name String
+-- An expression can be unset, a literal, or the use of a rule.
+data Exp = Unset | Int Int | Name String
   deriving (Eq, Show)
 
 data EvaluationError = NoSuchRule | MultipleRules | Cycles
   deriving (Eq, Show)
 
-data Result = Result Value | UnsetVariables [String] | Error EvaluationError
+data Result = Result Exp | UnsetVariables [String] | Error EvaluationError
   deriving (Eq, Show)
 
 data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
@@ -73,7 +75,7 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 -- That value is used to replace an unset variable with the same name.
 -- TODO Raise an error if an input is provided for a variable that cannot be set.
 -- TODO Raise an error if an input is provided for non-existing variable.
-data Input = Input String Value
+data Input = Input String Exp
 
 --------------------------------------------------------------------------------
 tests =
