@@ -38,10 +38,13 @@ evaluate name rs is = case filter ((== name) . rName) rs of
   _ -> Error MultipleRules
 
 reduce e rs is = case e of
+  Bool x -> Result (Bool x)
   Int x -> Result (Int x)
   Name name -> evaluate name rs is
   Add e1 e2 -> case (reduce e1 rs is, reduce e2 rs is) of
     (Result (Int a), Result (Int b)) -> Result (Int (a + b))
+    (Result (Int _), Result t) -> Error (TypeMismatch $ "Expected an Int, got " ++ show t)
+    (Result t, Result (Int _)) -> Error (TypeMismatch $ "Expected an Int, got " ++ show t)
     (Error err, _) -> Error err -- TODO Combine multiple possible errors.
     (_, Error err) -> Error err -- TODO Combine multiple possible errors.
     (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
@@ -73,10 +76,10 @@ data Formula = Unset | Exp Exp
   deriving (Eq, Show)
 
 -- An expression can be a literal, or the use of a rule, or an addition.
-data Exp = Int Int | Name String | Add Exp Exp | Sum [Exp]
+data Exp = Bool Bool | Int Int | Name String | Add Exp Exp | Sum [Exp]
   deriving (Eq, Show)
 
-data EvaluationError = NoSuchRule | MultipleRules | Cycles
+data EvaluationError = NoSuchRule | MultipleRules | Cycles | TypeMismatch String
   deriving (Eq, Show)
 
 data Result = Result Exp | UnsetVariables [String] | Error EvaluationError
@@ -90,6 +93,9 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 -- TODO Raise an error if an input is provided for a variable that cannot be set.
 -- TODO Raise an error if an input is provided for non-existing variable.
 data Input = Input String Exp
+
+isTypeMismatch (Error (TypeMismatch _)) = True
+isTypeMismatch _ = False
 
 --------------------------------------------------------------------------------
 tests =
@@ -106,6 +112,9 @@ tests =
   , evaluate "f" rules [Input "e" (Int 4)] == Result (Int 4)
   , evaluate "g" rules [] == Result (Int 11)
   , evaluate "h" rules [] == Result (Int 17)
+  , evaluate "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
+  , isTypeMismatch $ evaluate "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
+  , isTypeMismatch $ evaluate "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))] []
   ] 
 
 --------------------------------------------------------------------------------
