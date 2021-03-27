@@ -1,5 +1,6 @@
 module Main where
 
+import Data.List (nub)
 import System.Environment (getArgs)
 
 
@@ -27,17 +28,25 @@ main = do
 
 --------------------------------------------------------------------------------
 evaluate name rs is = case filter ((== name) . rName) rs of
-  [r] -> reduce r rs is
+  [r] -> case rFormula r of
+    Unset -> case lookupInput (rName r) is of
+      Just (Int x) -> Result (Int x)
+      Just _ -> error "Inputs cannot contain Unset or Name."
+      Nothing -> UnsetVariables [rName r]
+    Exp e -> reduce e rs is
   [] -> Error NoSuchRule
   _ -> Error MultipleRules
 
-reduce r rs is = case rFormula r of
-  Unset -> case lookupInput (rName r) is of
-    Just (Int x) -> Result (Int x)
-    Just _ -> error "Inputs cannot contain Unset or Name."
-    Nothing -> UnsetVariables [rName r]
+reduce e rs is = case e of
   Int x -> Result (Int x)
   Name name -> evaluate name rs is
+  Add e1 e2 -> case (reduce e1 rs is, reduce e2 rs is) of
+    (Result (Int a), Result (Int b)) -> Result (Int (a + b))
+    (Error err, _) -> Error err -- TODO Combine multiple possible errors.
+    (_, Error err) -> Error err -- TODO Combine multiple possible errors.
+    (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
+    (UnsetVariables xs, _) -> UnsetVariables xs
+    (_, UnsetVariables ys) -> UnsetVariables ys
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -54,12 +63,15 @@ validate = undefined
 -- to a value. Names can be multiple words, e.g. "meal unit price".
 data Rule = Rule
   { rName :: String
-  , rFormula :: Exp
+  , rFormula :: Formula
   }
   deriving (Eq, Show)
 
--- An expression can be unset, a literal, or the use of a rule.
-data Exp = Unset | Int Int | Name String
+data Formula = Unset | Exp Exp
+  deriving (Eq, Show)
+
+-- An expression can be a literal, or the use of a rule, or an addition.
+data Exp = Int Int | Name String | Add Exp Exp
   deriving (Eq, Show)
 
 data EvaluationError = NoSuchRule | MultipleRules | Cycles
@@ -80,8 +92,8 @@ data Input = Input String Exp
 --------------------------------------------------------------------------------
 tests =
   [ evaluate "a" [] [] == Error NoSuchRule
-  , evaluate "a" [Rule "a" (Int 5), Rule "a" (Int 6)] [] == Error MultipleRules
-  , evaluate "a" [Rule "a" (Int 5)] [] == Result (Int 5)
+  , evaluate "a" [Rule "a" (Exp $ Int 5), Rule "a" (Exp $ Int 6)] [] == Error MultipleRules
+  , evaluate "a" [Rule "a" (Exp $ Int 5)] [] == Result (Int 5)
   , evaluate "a" rules [] == Result (Int 5)
   , evaluate "b" rules [] == Result (Int 6)
   , evaluate "c" rules [] == Result (Int 6)
@@ -90,23 +102,26 @@ tests =
   , evaluate "e" rules [Input "e" (Int 4)] == Result (Int 4)
   , evaluate "f" rules [] == UnsetVariables ["e"]
   , evaluate "f" rules [Input "e" (Int 4)] == Result (Int 4)
+  , evaluate "g" rules [] == Result (Int 11)
   ] 
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
-rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_cycle]
+rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_cycle]
 
-rule_1 = Rule "a" (Int 5)
+rule_1 = Rule "a" (Exp (Int 5))
 
-rule_2 = Rule "b" (Int 6)
+rule_2 = Rule "b" (Exp (Int 6))
 
-rule_3 = Rule "c" (Name "b")
+rule_3 = Rule "c" (Exp (Name "b"))
 
-rule_4 = Rule "d" (Name "c")
+rule_4 = Rule "d" (Exp (Name "c"))
 
 rule_5 = Rule "e" Unset
 
 -- Reference an unset rule.
-rule_6 = Rule "f" (Name "e")
+rule_6 = Rule "f" (Exp (Name "e"))
 
-rule_cycle = Rule "cycle" (Name "cycle") -- TODO Find cycles.
+rule_7 = Rule "g" (Exp (Add (Name "a") (Name "b")))
+
+rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
