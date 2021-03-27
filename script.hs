@@ -93,7 +93,7 @@ tests =
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
-rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_cycle]
+rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_cycle]
 
 rule_1 = Rule "a" (Int 5)
 
@@ -104,5 +104,8 @@ rule_3 = Rule "c" (Name "b")
 rule_4 = Rule "d" (Name "c")
 
 rule_5 = Rule "e" Unset
+
+-- Reference an unset rule.
+rule_6 = Rule "f" (Name "e")
 
 rule_cycle = Rule "cycle" (Name "cycle") -- TODO Find cycles.
