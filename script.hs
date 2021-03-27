@@ -47,6 +47,8 @@ reduce e rs is = case e of
     (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
     (UnsetVariables xs, _) -> UnsetVariables xs
     (_, UnsetVariables ys) -> UnsetVariables ys
+  Sum [] -> Result (Int 0)
+  Sum (e : es) -> reduce (Add e (Sum es)) rs is
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -71,7 +73,7 @@ data Formula = Unset | Exp Exp
   deriving (Eq, Show)
 
 -- An expression can be a literal, or the use of a rule, or an addition.
-data Exp = Int Int | Name String | Add Exp Exp
+data Exp = Int Int | Name String | Add Exp Exp | Sum [Exp]
   deriving (Eq, Show)
 
 data EvaluationError = NoSuchRule | MultipleRules | Cycles
@@ -103,11 +105,12 @@ tests =
   , evaluate "f" rules [] == UnsetVariables ["e"]
   , evaluate "f" rules [Input "e" (Int 4)] == Result (Int 4)
   , evaluate "g" rules [] == Result (Int 11)
+  , evaluate "h" rules [] == Result (Int 17)
   ] 
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
-rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_cycle]
+rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_cycle]
 
 rule_1 = Rule "a" (Exp (Int 5))
 
@@ -123,5 +126,7 @@ rule_5 = Rule "e" Unset
 rule_6 = Rule "f" (Exp (Name "e"))
 
 rule_7 = Rule "g" (Exp (Add (Name "a") (Name "b")))
+
+rule_8 = Rule "h" (Exp (Sum [Name "a", Name "b", Name "c"]))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
