@@ -9,6 +9,17 @@ I think this could be used to compute payrolls, but also to implement business
 rules regarding e.g. the creation of contract (e.g. what VAT rate can be used,
 if a risk declaration is required, ...).
 
+In addition, I think it can be used to create forms, by allowing to return
+objects (also called attribute sets, maps, dictionaries) that represent filled
+forms.
+
+In other words, it seems a form can be described as: a simple lazily evaluated
+expression that returns a structured representation of its input, possibly with
+a list of missing inputs.
+
+
+# Example usage
+
 ```
 $ runghc script.hs a
 Result (Int 5)

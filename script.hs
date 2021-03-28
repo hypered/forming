@@ -48,7 +48,26 @@ evaluate name rs is = case filter ((== name) . rName) rs of
 reduce e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
+  List [] -> Result (List [])
+  List (e : es) -> case reduce e rs is of
+    (Result x) -> case reduce (List es) rs is of
+      (Result (List xs)) -> Result (List (x : xs))
+      (Result _) -> error "Can't happen; the Result is necessarily a List."
+      Error err -> Error err
+      UnsetVariables xs -> UnsetVariables xs
+    Error err -> Error err
+    UnsetVariables xs -> UnsetVariables xs
+  Object kvs -> case reduce (List (map snd kvs)) rs is of
+    (Result (List xs)) -> Result (Object (zip (map fst kvs) xs))
+    (Result _) -> error "Can't happen; the Result is necessarily a List."
+    Error err -> Error err
+    UnsetVariables xs -> UnsetVariables xs
   Name name -> evaluate name rs is
+  Names names -> case reduce (List (map Name names)) rs is of
+    (Result (List xs)) -> Result (Object (zip names xs))
+    (Result _) -> error "Can't happen; the Result is necessarily a List."
+    Error err -> Error err
+    UnsetVariables xs -> UnsetVariables xs
   Cond e1 e2 e3 -> case reduce e1 rs is of
     (Result (Bool True)) -> reduce e2 rs is
     (Result (Bool False)) -> reduce e3 rs is
@@ -89,11 +108,13 @@ data Rule = Rule
 data Formula = Unset | Exp Exp
   deriving (Eq, Show)
 
--- An expression can be a literal, or the use of a rule, or an addition.
 data Exp =
     Bool Bool
   | Int Int
+  | List [Exp]
+  | Object [(String, Exp)] -- TODO Use a Map.
   | Name String
+  | Names [String] -- ^ I think this is similar to Nix's `inherit`.
   | Cond Exp Exp Exp -- if _ then _ else _
   | Add Exp Exp
   | Sum [Exp]
@@ -148,7 +169,7 @@ tests =
 -- Examples rules to play with the CLI.
 rules =
   [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_9
-  , rule_10, rule_11, rule_cycle
+  , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_cycle
   ]
 
 rule_1 = Rule "a" (Exp (Int 5))
@@ -173,5 +194,13 @@ rule_9 = Rule "i" Unset
 rule_10 = Rule "k" (Exp (Cond (Name "i") (Int 1) (Int 2)))
 
 rule_11 = Rule "l" (Exp (Cond (Name "i") (Name "a") (Name "e")))
+
+rule_12 = Rule "m" (Exp (Object [("a", Int 1)]))
+
+rule_13 = Rule "n" (Exp (Object [("a", Int 1), ("b", Int 2)]))
+
+rule_14 = Rule "o" (Exp (Names ["a", "b"]))
+
+rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
