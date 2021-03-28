@@ -7,20 +7,25 @@ import System.Environment (getArgs)
 --------------------------------------------------------------------------------
 main = do
   args <- getArgs
+
   case args of
 
     -- Run the tests
     ["--run-tests"] -> print tests
 
     -- List all rules
-    ["--list"] -> print rules
+    ["--list"] -> mapM_ print rules
+
+    -- List unset names
+    ["--unset"] -> mapM_ print (filter isUnset rules)
 
     [] -> error "TODO Usage."
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule
     rest -> do
       let (name, is) = makeInputs rest []
-      print (evaluate name (rules ++ form_1) is)
+      mapM_ print is
+      print (evaluate name rules is)
 
 makeInputs [name] is = (name, is)
 makeInputs ("--set" : var : val : rest) is = case val of
@@ -31,6 +36,9 @@ makeInputs ("--set" : var : val : rest) is = case val of
   "False" ->
     makeInputs rest (is ++ [Input var (Bool False)])
   _ -> error "TODO Usage."
+
+isUnset (Rule _ Unset) = True
+isUnset _ = False
 
 
 --------------------------------------------------------------------------------
@@ -134,6 +142,7 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 -- TODO Raise an error if an input is provided for a variable that cannot be set.
 -- TODO Raise an error if an input is provided for non-existing variable.
 data Input = Input String Exp
+  deriving Show
 
 isTypeMismatch (Error (TypeMismatch _)) = True
 isTypeMismatch _ = False
@@ -171,6 +180,7 @@ rules =
   [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_9
   , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_cycle
   ]
+  ++ form_1
 
 rule_1 = Rule "a" (Exp (Int 5))
 
