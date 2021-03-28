@@ -20,7 +20,7 @@ main = do
     -- Parse inputs of the form `--set a 1` and evaluate one rule
     rest -> do
       let (name, is) = makeInputs rest []
-      print (evaluate name rules is)
+      print (evaluate name (rules ++ form_1) is)
 
 makeInputs [name] is = (name, is)
 makeInputs ("--set" : var : val : rest) is = case val of
@@ -204,3 +204,20 @@ rule_14 = Rule "o" (Exp (Names ["a", "b"]))
 rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
+
+
+--------------------------------------------------------------------------------
+
+-- A example form.
+-- The second value must be provided if the first one is set to True.
+--   $ runghc script.hs --set "has a cat" True --set "a cat's name" 1 form
+--   Result (Object [("has a cat",Bool True),("a cat's name",Int 1)])
+--
+form_1 =
+  [ Rule "has a cat" Unset
+  , Rule "a cat's name" Unset
+  , Rule "form" (Exp (Cond
+      (Name "has a cat")
+      (Names ["has a cat", "a cat's name"])
+      (Names ["has a cat"])))
+  ]
