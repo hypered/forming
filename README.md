@@ -28,6 +28,7 @@ $ runghc script.hs e
 UnsetVariables ["e"]
 
 $ runghc script.hs --set e 4 e
+Input "e" (Int 4)
 Result (Int 4)
 ```
 
@@ -37,12 +38,16 @@ thus must be set.
 
 ```
 $ runghc script.hs --set i True l
+Input "i" (Bool True)
 Result (Int 5)
 
 $ runghc script.hs --set i False l
+Input "i" (Bool False)
 UnsetVariables ["e"]
 
 $ runghc script.hs --set i False --set e 4 l
+Input "i" (Bool False)
+Input "e" (Int 4)
 Result (Int 4)
 ```
 
