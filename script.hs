@@ -15,22 +15,22 @@ main = do
     -- List all rules
     ["--list"] -> print rules
 
-    -- Evaluate one rule
-    [name] ->
-      print (evaluate name rules [])
+    [] -> error "TODO Usage."
 
-    -- Evaluate one rule, but also provide an input
-    "--set" : var : val : [name] -> do
-      case val of
-        _ | all (`elem` "0123456789") val ->
-          print $ evaluate name rules [Input var (Int $ read val)]
-        "True" ->
-          print $ evaluate name rules [Input var (Bool True)]
-        "False" ->
-          print $ evaluate name rules [Input var (Bool False)]
-        _ -> error "TODO"
+    -- Parse inputs of the form `--set a 1` and evaluate one rule
+    rest -> do
+      let (name, is) = makeInputs rest []
+      print (evaluate name rules is)
 
-    _ -> error "TODO Usage."
+makeInputs [name] is = (name, is)
+makeInputs ("--set" : var : val : rest) is = case val of
+  _ | all (`elem` "0123456789") val ->
+    makeInputs rest (is ++ [Input var (Int $ read val)])
+  "True" ->
+    makeInputs rest (is ++ [Input var (Bool True)])
+  "False" ->
+    makeInputs rest (is ++ [Input var (Bool False)])
+  _ -> error "TODO Usage."
 
 
 --------------------------------------------------------------------------------

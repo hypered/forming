@@ -20,6 +20,21 @@ $ runghc script.hs --set e 4 e
 Result (Int 4)
 ```
 
+In the following example, if `i` is `True`, the value is taken from `a`, which
+is 5. But if it is set to `False`, the value comes from `e`, which is unset and
+thus must be set.
+
+```
+$ runghc script.hs --set i True l
+Result (Int 5)
+
+$ runghc script.hs --set i False l
+UnsetVariables ["e"]
+
+$ runghc script.hs --set i False --set e 4 l
+Result (Int 4)
+```
+
 
 # Notes
 
