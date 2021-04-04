@@ -27,7 +27,6 @@ main = do
       mapM_ print is
       print (evaluate name rules is)
 
-makeInputs [name] is = (name, is)
 makeInputs ("--set" : var : val : rest) is = case val of
   _ | all (`elem` "0123456789") val ->
     makeInputs rest (is ++ [Input var (Int $ read val)])
@@ -38,6 +37,10 @@ makeInputs ("--set" : var : val : rest) is = case val of
   _ ->
     --TODO Add some type signature, or quotes araound strings.
     makeInputs rest (is ++ [Input var (String val)])
+makeInputs ["--set"] _ = error "TODO Usage."
+makeInputs ["--set", _] _ = error "TODO Usage."
+makeInputs [name] is = (name, is)
+makeInputs _ _ = error "TODO Usage."
 
 isUnset (Rule _ Unset) = True
 isUnset _ = False
