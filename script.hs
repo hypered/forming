@@ -11,7 +11,7 @@ main = do
   case args of
 
     -- Run the tests
-    ["--run-tests"] -> print tests
+    ["--run-tests"] -> print (all id tests, tests)
 
     -- List all rules
     ["--list"] -> mapM_ print rules
@@ -35,7 +35,9 @@ makeInputs ("--set" : var : val : rest) is = case val of
     makeInputs rest (is ++ [Input var (Bool True)])
   "False" ->
     makeInputs rest (is ++ [Input var (Bool False)])
-  _ -> error "TODO Usage."
+  _ ->
+    --TODO Add some type signature, or quotes araound strings.
+    makeInputs rest (is ++ [Input var (String val)])
 
 isUnset (Rule _ Unset) = True
 isUnset _ = False
@@ -47,6 +49,7 @@ evaluate name rs is = case filter ((== name) . rName) rs of
     Unset -> case lookupInput (rName r) is of
       Just (Bool x) -> Result (Bool x)
       Just (Int x) -> Result (Int x)
+      Just (String x) -> Result (String x)
       Just _ -> error "Inputs cannot contain Unset or Name."
       Nothing -> UnsetVariables [rName r]
     Exp e -> reduce e rs is
@@ -56,6 +59,7 @@ evaluate name rs is = case filter ((== name) . rName) rs of
 reduce e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
+  String x -> Result (String x)
   List [] -> Result (List [])
   List (e : es) -> case reduce e rs is of
     (Result x) -> case reduce (List es) rs is of
@@ -119,6 +123,7 @@ data Formula = Unset | Exp Exp
 data Exp =
     Bool Bool
   | Int Int
+  | String String
   | List [Exp]
   | Object [(String, Exp)] -- TODO Use a Map.
   | Name String
@@ -172,13 +177,14 @@ tests =
   , evaluate "l" rules [Input "i" (Bool True)] == Result (Int 5)
   , evaluate "l" rules [Input "i" (Bool False)] == UnsetVariables ["e"]
   , evaluate "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
+  , evaluate "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
   ] 
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
 rules =
   [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_9
-  , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_cycle
+  , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_cycle
   ]
   ++ form_1
 
@@ -213,6 +219,8 @@ rule_14 = Rule "o" (Exp (Names ["a", "b"]))
 
 rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
 
+rule_16 = Rule "q" (Exp (String "a"))
+
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
 
 
@@ -220,7 +228,7 @@ rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
 
 -- A example form.
 -- The second value must be provided if the first one is set to True.
---   $ runghc script.hs --set "has a cat" True --set "a cat's name" 1 form
+--   $ runghc script.hs --set "has a cat" True --set "a cat's name" Tom form
 --   Result (Object [("has a cat",Bool True),("a cat's name",Int 1)])
 --
 form_1 =
