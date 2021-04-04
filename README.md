@@ -51,6 +51,18 @@ Input "e" (Int 4)
 Result (Int 4)
 ```
 
+Assertions:
+
+```
+$ runghc script.hs --set e 1 r
+Input "e" (Int 1)
+Error (AssertionIntError (GreaterThan 1))
+
+$ runghc script.hs --set e 2 r
+Input "e" (Int 2)
+Result (Int 2)
+```
+
 
 # Notes
 

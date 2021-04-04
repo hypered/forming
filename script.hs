@@ -65,6 +65,12 @@ evaluate name rs is = case filter ((== name) . rName) rs of
 reduce e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
+  AssertInt assertion e -> case reduce e rs is of
+    Result x -> case check assertion x of
+      Nothing -> Result x
+      Just err -> Error err
+    Error err -> Error err
+    UnsetVariables xs -> UnsetVariables xs
   String x -> Result (String x)
   List [] -> Result (List [])
   List (e : es) -> case reduce e rs is of
@@ -133,6 +139,13 @@ gatherUnsets' rs e = case e of
   Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
   Sum es -> gatherUnsets' rs (List es)
 
+check :: AssertionInt -> Exp -> Maybe EvaluationError
+check a@(GreaterThan y) _x = case _x of
+  Int x | x > y -> Nothing
+        | otherwise -> Just (AssertionIntError a)
+  _ -> Just (TypeMismatch ("Expected an Int, got " ++ show _x))
+
+
 
 --------------------------------------------------------------------------------
 -- TODO E.g. rule names cannot be the empty string, or multiple rules with the
@@ -154,7 +167,9 @@ data Formula = Unset | Exp Exp
 
 data Exp =
     Bool Bool
-  | Int Int
+    -- Is it really useful to have assertions on whole Exp, instead of Unset
+    -- values ?
+  | Int Int | AssertInt AssertionInt Exp
   | String String
   | List [Exp]
   | Object [(String, Exp)] -- TODO Use a Map.
@@ -165,7 +180,11 @@ data Exp =
   | Sum [Exp]
   deriving (Eq, Show)
 
+data AssertionInt = GreaterThan Int
+  deriving (Eq, Show)
+
 data EvaluationError = NoSuchRule | MultipleRules | Cycles | TypeMismatch String
+  | AssertionIntError AssertionInt
   deriving (Eq, Show)
 
 data Result = Result Exp | UnsetVariables [String] | Error EvaluationError
@@ -216,7 +235,8 @@ tests =
 -- Examples rules to play with the CLI.
 rules =
   [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_9
-  , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_cycle
+  , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17
+  , rule_cycle
   ]
   ++ form_1
 
@@ -252,6 +272,8 @@ rule_14 = Rule "o" (Exp (Names ["a", "b"]))
 rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
 
 rule_16 = Rule "q" (Exp (String "a"))
+
+rule_17 = Rule "r" (Exp (AssertInt (GreaterThan 1) (Name "e")))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
 
