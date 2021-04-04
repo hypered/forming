@@ -19,6 +19,9 @@ main = do
     -- List unset names
     ["--unset"] -> mapM_ print (filter isUnset rules)
 
+    -- List unset names involved in a specific rule
+    ["--unset", name] -> print (gatherUnsets name rules)
+
     [] -> error "TODO Usage."
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule
@@ -103,6 +106,32 @@ reduce e rs is = case e of
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
+
+-- TODO There is no sharing, so multiple occurence of same name is computed
+-- multiple times.
+gatherUnsets name rs = case filter ((== name) . rName) rs of
+  [r] -> case rFormula r of
+    Unset -> Right [r]
+    Exp e -> gatherUnsets' rs e
+  [] -> Left NoSuchRule
+  _ -> Left MultipleRules
+
+gatherUnsets' rs e = case e of
+  Bool x -> Right []
+  Int x -> Right []
+  String x -> Right []
+  List [] -> Right []
+  List (e : es) -> case gatherUnsets' rs e of
+    Right x -> case gatherUnsets' rs (List es) of
+      Right xs -> Right (x ++ xs)
+      Left err -> Left err
+    Left err -> Left err
+  Object kvs -> gatherUnsets' rs (List (map snd kvs))
+  Name name -> gatherUnsets name rs
+  Names names -> gatherUnsets' rs (List (map Name names))
+  Cond e1 e2 e3 -> gatherUnsets' rs (List [e1, e2, e3])
+  Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
+  Sum es -> gatherUnsets' rs (List es)
 
 
 --------------------------------------------------------------------------------
