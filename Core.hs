@@ -55,7 +55,8 @@ printResult r = case r of
     putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
   Result x -> printValue 0 x
   Error (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
-  Error MultipleRules -> putStrLn "Multiple rules have the same name."
+  Error (MultipleRules name) -> putStrLn $
+    "Multiple rules have the same name \"" ++ name ++ "\"."
   Error Cycles -> putStrLn "The rules form a cycle."
   Error (TypeMismatch err) -> putStrLn $ "Type mismatch: " ++ err
   Error (AssertionIntError err) -> putStrLn $ "An assertion has failed: " ++ show err
@@ -104,7 +105,7 @@ evaluate name rs is = case filter ((== name) . rName) rs of
       Nothing -> UnsetVariables [rName r]
     Exp e -> reduce e rs is
   [] -> Error (NoSuchRule name)
-  _ -> Error MultipleRules
+  _ -> Error (MultipleRules name)
 
 reduce e rs is = case e of
   Bool x -> Result (Bool x)
@@ -164,7 +165,7 @@ gatherUnsets name rs = case filter ((== name) . rName) rs of
     Unset -> Right [r]
     Exp e -> gatherUnsets' rs e
   [] -> Left (NoSuchRule name)
-  _ -> Left MultipleRules
+  _ -> Left (MultipleRules name)
 
 gatherUnsets' rs e = case e of
   Bool x -> Right []
@@ -239,7 +240,7 @@ data AssertionInt = GreaterThan Int
 
 data EvaluationError =
     NoSuchRule String
-  | MultipleRules
+  | MultipleRules String
   | Cycles
   | TypeMismatch String
   | AssertionIntError AssertionInt
