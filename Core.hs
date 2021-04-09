@@ -53,8 +53,21 @@ printResult r = case r of
     putStrLn "This computation expects the following user inputs:\n"
     mapM_ (putStrLn . ("  " ++)) names
     putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
-  Result (Int x) -> print x
+  Result x -> printValue 0 x
   Error (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
+  Error MultipleRules -> putStrLn "Multiple rules have the same name."
+  Error Cycles -> putStrLn "The rules form a cycle."
+  Error (TypeMismatch err) -> putStrLn $ "Type mismatch: " ++ err
+  Error (AssertionIntError err) -> putStrLn $ "An assertion has failed: " ++ show err
+
+printValue indent v = case v of
+  Int x -> putStrLn (padding ++ show x)
+  Bool x -> putStrLn (padding ++ show x)
+  String x -> putStrLn (padding ++ show x)
+  Object xs -> mapM_ (\(k, v) -> do
+    putStrLn (padding ++ k ++ ": ") >> printValue (indent + 1) v) xs
+
+  where padding = replicate (indent * 2) ' '
 
 
 --------------------------------------------------------------------------------
