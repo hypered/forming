@@ -61,8 +61,10 @@ printResult r = case r of
   Error stack (TypeMismatch err) -> do
     putStrLn $ "Type mismatch: " ++ err
     putStrLn $ "while evaluating rules " ++ show stack
-  Error stack (AssertionIntError err) -> do
-    putStrLn $ "An assertion has failed: " ++ show err
+  Error stack (AssertionIntError mname err) -> do
+    putStrLn $ "An assertion has failed: " ++
+      maybe "" (\name -> "\"" ++ name ++ "\" must be ") mname
+      ++ show err
     putStrLn $ "while evaluating rules " ++ show stack
 
 printValue indent v = case v of
@@ -115,7 +117,7 @@ reduce stack e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
   AssertInt assertion e -> case reduce stack e rs is of
-    Result x -> case check assertion x of
+    Result x -> case check e assertion x of
       Nothing -> Result x
       Just err -> Error stack err
     Error stack' err -> Error stack' err
@@ -188,10 +190,14 @@ gatherUnsets' rs e = case e of
   Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
   Sum es -> gatherUnsets' rs (List es)
 
-check :: AssertionInt -> Exp -> Maybe EvaluationError
-check a@(GreaterThan y) _x = case _x of
+-- | Giving the unevaluated expression is used in the special case it is a
+-- Name, to provide a better error message.
+check :: Exp -> AssertionInt -> Exp -> Maybe EvaluationError
+check e a@(GreaterThan y) _x = case _x of
   Int x | x > y -> Nothing
-        | otherwise -> Just (AssertionIntError a)
+        | otherwise -> case e of
+    Name name -> Just (AssertionIntError (Just name) a)
+    _ -> Just (AssertionIntError Nothing a)
   _ -> Just (TypeMismatch ("Expected an Int, got " ++ show _x))
 
 
@@ -247,7 +253,8 @@ data EvaluationError =
   | MultipleRules String
   | Cycles
   | TypeMismatch String
-  | AssertionIntError AssertionInt
+  | AssertionIntError (Maybe String) AssertionInt
+    -- ^ When the assertion involves directly a Name, it is give here.
   deriving (Eq, Show)
 
 data Result = Result Exp | UnsetVariables [String] | Error [String] EvaluationError
