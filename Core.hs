@@ -6,6 +6,7 @@
 module Core where
 
 import System.Environment (getArgs)
+import System.Exit (exitFailure)
 
 import Data.List (nub)
 
@@ -29,14 +30,23 @@ run Computation{..} = do
     ["--help"] -> do
       putStrLn cName
       -- Evaluate without input to give a hint a possible user inputs.
-      case (evaluate cMain cRules []) of
+      case evaluate cMain cRules [] of
         UnsetVariables names -> printResult (UnsetVariables names)
         Result _ -> putStrLn "This computation doesn't require any user input."
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule.
     rest -> do
-      let (mname, is) = makeInputs rest []
-      printResult (evaluate (maybe cMain id mname) cRules is)
+      case makeInputs rest [] of
+        Right (mname, is) ->
+          case evaluate (maybe cMain id mname) cRules is of
+            UnsetVariables names -> do
+              putStrLn "ERROR: missing user inputs."
+              printResult (UnsetVariables names)
+              exitFailure
+            Result x -> printResult (Result x)
+        Left err -> do
+          putStrLn ("ERROR: " ++ err)
+          exitFailure
 
 printResult r = case r of
   UnsetVariables names -> do
@@ -58,10 +68,12 @@ makeInputs ("--set" : var : val : rest) is = case val of
   _ ->
     --TODO Add some type signature, or quotes araound strings.
     makeInputs rest (is ++ [Input var (String val)])
-makeInputs ["--set"] _ = error "TODO Usage."
-makeInputs ["--set", _] _ = error "TODO Usage."
-makeInputs [name] is = (Just name, is)
-makeInputs [] is = (Nothing, is)
+makeInputs ["--set"] _ =
+  Left "--set expects two arguments (none given here)"
+makeInputs ["--set", _] _ =
+  Left "--set expects two arguments (only one given here)"
+makeInputs [name] is = Right (Just name, is)
+makeInputs [] is = Right (Nothing, is)
 
 isUnset (Rule _ Unset) = True
 isUnset _ = False
@@ -168,6 +180,8 @@ check a@(GreaterThan y) _x = case _x of
 -- TODO E.g. rule names cannot be the empty string, or multiple rules with the
 -- same names cannot be present (although this one is also detected at
 -- evaluation time).
+-- TODO Raise an error when a user input is given for fixed rule (i.e. not an
+-- Unset).
 validate = undefined
 
 --------------------------------------------------------------------------------
