@@ -43,7 +43,7 @@ run Computation{..} = do
               putStrLn "ERROR: missing user inputs."
               printResult (UnsetVariables names)
               exitFailure
-            Result x -> printResult (Result x)
+            x -> printResult x
         Left err -> do
           putStrLn ("ERROR: " ++ err)
           exitFailure
@@ -54,6 +54,7 @@ printResult r = case r of
     mapM_ (putStrLn . ("  " ++)) names
     putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
   Result (Int x) -> print x
+  Error (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
 
 
 --------------------------------------------------------------------------------
@@ -89,7 +90,7 @@ evaluate name rs is = case filter ((== name) . rName) rs of
       Just _ -> error "Inputs cannot contain Unset or Name."
       Nothing -> UnsetVariables [rName r]
     Exp e -> reduce e rs is
-  [] -> Error NoSuchRule
+  [] -> Error (NoSuchRule name)
   _ -> Error MultipleRules
 
 reduce e rs is = case e of
@@ -149,7 +150,7 @@ gatherUnsets name rs = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
     Unset -> Right [r]
     Exp e -> gatherUnsets' rs e
-  [] -> Left NoSuchRule
+  [] -> Left (NoSuchRule name)
   _ -> Left MultipleRules
 
 gatherUnsets' rs e = case e of
@@ -223,7 +224,11 @@ data Exp =
 data AssertionInt = GreaterThan Int
   deriving (Eq, Show)
 
-data EvaluationError = NoSuchRule | MultipleRules | Cycles | TypeMismatch String
+data EvaluationError =
+    NoSuchRule String
+  | MultipleRules
+  | Cycles
+  | TypeMismatch String
   | AssertionIntError AssertionInt
   deriving (Eq, Show)
 
