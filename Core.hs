@@ -31,7 +31,7 @@ run Computation{..} = do
       putStrLn cName
       -- Evaluate without input to give a hint a possible user inputs.
       case evaluate [] cMain cRules [] of
-        UnsetVariables names -> printResult (UnsetVariables names)
+        UnsetVariables names -> printUnsetVariables names
         Result _ -> putStrLn "This computation doesn't require any user input."
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule.
@@ -41,28 +41,31 @@ run Computation{..} = do
           case evaluate [] (maybe cMain id mname) cRules is of
             UnsetVariables names -> do
               putStrLn "ERROR: missing user inputs."
-              printResult (UnsetVariables names)
+              printUnsetVariables names
               exitFailure
-            x -> printResult x
+            Result x -> printValue 0 x
+            Error stack err -> do
+              putStr "ERROR: "
+              printError stack err
         Left err -> do
           putStrLn ("ERROR: " ++ err)
           exitFailure
 
-printResult r = case r of
-  UnsetVariables names -> do
-    putStrLn "This computation expects the following user inputs:\n"
-    mapM_ (putStrLn . ("  " ++)) names
-    putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
-  Result x -> printValue 0 x
-  Error stack (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
-  Error stack (MultipleRules name) -> putStrLn $
-    "Multiple rules have the same name \"" ++ name ++ "\"."
-  Error stack Cycles -> putStrLn "The rules form a cycle."
-  Error stack (TypeMismatch err) -> do
-    putStrLn $ "Type mismatch: " ++ err
+printUnsetVariables names = do
+  putStrLn "This computation expects the following user inputs:\n"
+  mapM_ (putStrLn . ("  " ++)) names
+  putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
+
+printError stack err = case err of
+  NoSuchRule name -> putStrLn $ "no such rule \"" ++ name ++"\"."
+  MultipleRules name -> putStrLn $
+    "multiple rules have the same name \"" ++ name ++ "\"."
+  Cycles -> putStrLn "The rules form a cycle."
+  TypeMismatch err -> do
+    putStrLn $ "type mismatch: " ++ err
     putStrLn $ "while evaluating rules " ++ show stack
-  Error stack (AssertionIntError mname err) -> do
-    putStrLn $ "An assertion has failed: " ++
+  AssertionIntError mname err -> do
+    putStrLn $ "an assertion has failed: " ++
       maybe "" (\name -> "\"" ++ name ++ "\" must be ") mname
       ++ show err
     putStrLn $ "while evaluating rules " ++ show stack
