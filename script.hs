@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Main where
 
 import Data.List (nub)
@@ -154,6 +156,15 @@ check a@(GreaterThan y) _x = case _x of
 validate = undefined
 
 --------------------------------------------------------------------------------
+-- A computation, could also be called a form, is a list of rules with a main
+-- one to evaluate.
+data Computation = Computation
+  { cName :: String
+  , cMain :: String -- Must appear in the cRules.
+  , cRules :: [Rule]
+  }
+
+
 -- A rule is a binding of a name to a formula, which can be reduced (evaluated)
 -- to a value. Names can be multiple words, e.g. "meal unit price".
 data Rule = Rule
