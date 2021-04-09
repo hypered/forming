@@ -21,13 +21,13 @@ a list of missing inputs.
 # Example usage
 
 ```
-$ runghc script.hs a
+$ runghc bin/play.hs a
 Result (Int 5)
 
-$ runghc script.hs e
+$ runghc bin/play.hs e
 UnsetVariables ["e"]
 
-$ runghc script.hs --set e 4 e
+$ runghc bin/play.hs --set e 4 e
 Input "e" (Int 4)
 Result (Int 4)
 ```
@@ -37,15 +37,15 @@ is 5. But if it is set to `False`, the value comes from `e`, which is unset and
 thus must be set.
 
 ```
-$ runghc script.hs --set i True l
+$ runghc bin/play.hs --set i True l
 Input "i" (Bool True)
 Result (Int 5)
 
-$ runghc script.hs --set i False l
+$ runghc bin/play.hs --set i False l
 Input "i" (Bool False)
 UnsetVariables ["e"]
 
-$ runghc script.hs --set i False --set e 4 l
+$ runghc bin/play.hs --set i False --set e 4 l
 Input "i" (Bool False)
 Input "e" (Int 4)
 Result (Int 4)
@@ -54,11 +54,11 @@ Result (Int 4)
 Assertions:
 
 ```
-$ runghc script.hs --set e 1 r
+$ runghc bin/play.hs --set e 1 r
 Input "e" (Int 1)
 Error (AssertionIntError (GreaterThan 1))
 
-$ runghc script.hs --set e 2 r
+$ runghc bin/play.hs --set e 2 r
 Input "e" (Int 2)
 Result (Int 2)
 ```
