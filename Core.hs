@@ -30,7 +30,7 @@ run Computation{..} = do
     ["--help"] -> do
       putStrLn cName
       -- Evaluate without input to give a hint a possible user inputs.
-      case evaluate cMain cRules [] of
+      case evaluate [] cMain cRules [] of
         UnsetVariables names -> printResult (UnsetVariables names)
         Result _ -> putStrLn "This computation doesn't require any user input."
 
@@ -38,7 +38,7 @@ run Computation{..} = do
     rest -> do
       case makeInputs rest [] of
         Right (mname, is) ->
-          case evaluate (maybe cMain id mname) cRules is of
+          case evaluate [] (maybe cMain id mname) cRules is of
             UnsetVariables names -> do
               putStrLn "ERROR: missing user inputs."
               printResult (UnsetVariables names)
@@ -54,12 +54,16 @@ printResult r = case r of
     mapM_ (putStrLn . ("  " ++)) names
     putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
   Result x -> printValue 0 x
-  Error (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
-  Error (MultipleRules name) -> putStrLn $
+  Error stack (NoSuchRule name) -> putStrLn $ "No such rule \"" ++ name ++"\"."
+  Error stack (MultipleRules name) -> putStrLn $
     "Multiple rules have the same name \"" ++ name ++ "\"."
-  Error Cycles -> putStrLn "The rules form a cycle."
-  Error (TypeMismatch err) -> putStrLn $ "Type mismatch: " ++ err
-  Error (AssertionIntError err) -> putStrLn $ "An assertion has failed: " ++ show err
+  Error stack Cycles -> putStrLn "The rules form a cycle."
+  Error stack (TypeMismatch err) -> do
+    putStrLn $ "Type mismatch: " ++ err
+    putStrLn $ "while evaluating rules " ++ show stack
+  Error stack (AssertionIntError err) -> do
+    putStrLn $ "An assertion has failed: " ++ show err
+    putStrLn $ "while evaluating rules " ++ show stack
 
 printValue indent v = case v of
   Int x -> putStrLn (padding ++ show x)
@@ -95,7 +99,7 @@ isUnset _ = False
 
 
 --------------------------------------------------------------------------------
-evaluate name rs is = case filter ((== name) . rName) rs of
+evaluate stack name rs is = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
     Unset -> case lookupInput (rName r) is of
       Just (Bool x) -> Result (Bool x)
@@ -103,57 +107,57 @@ evaluate name rs is = case filter ((== name) . rName) rs of
       Just (String x) -> Result (String x)
       Just _ -> error "Inputs cannot contain Unset or Name."
       Nothing -> UnsetVariables [rName r]
-    Exp e -> reduce e rs is
-  [] -> Error (NoSuchRule name)
-  _ -> Error (MultipleRules name)
+    Exp e -> reduce (name : stack) e rs is
+  [] -> Error [name] (NoSuchRule name)
+  _ -> Error [name] (MultipleRules name)
 
-reduce e rs is = case e of
+reduce stack e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
-  AssertInt assertion e -> case reduce e rs is of
+  AssertInt assertion e -> case reduce stack e rs is of
     Result x -> case check assertion x of
       Nothing -> Result x
-      Just err -> Error err
-    Error err -> Error err
+      Just err -> Error stack err
+    Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   String x -> Result (String x)
   List [] -> Result (List [])
-  List (e : es) -> case reduce e rs is of
-    (Result x) -> case reduce (List es) rs is of
+  List (e : es) -> case reduce stack e rs is of
+    (Result x) -> case reduce stack (List es) rs is of
       (Result (List xs)) -> Result (List (x : xs))
       (Result _) -> error "Can't happen; the Result is necessarily a List."
-      Error err -> Error err
+      Error stack' err -> Error stack' err
       UnsetVariables xs -> UnsetVariables xs
-    Error err -> Error err
+    Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Object kvs -> case reduce (List (map snd kvs)) rs is of
+  Object kvs -> case reduce stack (List (map snd kvs)) rs is of
     (Result (List xs)) -> Result (Object (zip (map fst kvs) xs))
     (Result _) -> error "Can't happen; the Result is necessarily a List."
-    Error err -> Error err
+    Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Name name -> evaluate name rs is
-  Names names -> case reduce (List (map Name names)) rs is of
+  Name name -> evaluate stack name rs is
+  Names names -> case reduce stack (List (map Name names)) rs is of
     (Result (List xs)) -> Result (Object (zip names xs))
     (Result _) -> error "Can't happen; the Result is necessarily a List."
-    Error err -> Error err
+    Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Cond e1 e2 e3 -> case reduce e1 rs is of
-    (Result (Bool True)) -> reduce e2 rs is
-    (Result (Bool False)) -> reduce e3 rs is
-    (Result t) -> Error (TypeMismatch $ "Expected a Bool, got " ++ show t)
-    Error err -> Error err
+  Cond e1 e2 e3 -> case reduce stack e1 rs is of
+    (Result (Bool True)) -> reduce stack e2 rs is
+    (Result (Bool False)) -> reduce stack e3 rs is
+    (Result t) -> Error stack (TypeMismatch $ "Expected a Bool, got " ++ show t)
+    Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Add e1 e2 -> case (reduce e1 rs is, reduce e2 rs is) of
+  Add e1 e2 -> case (reduce stack e1 rs is, reduce stack e2 rs is) of
     (Result (Int a), Result (Int b)) -> Result (Int (a + b))
-    (Result (Int _), Result t) -> Error (TypeMismatch $ "Expected an Int, got " ++ show t)
-    (Result t, Result (Int _)) -> Error (TypeMismatch $ "Expected an Int, got " ++ show t)
-    (Error err, _) -> Error err -- TODO Combine multiple possible errors.
-    (_, Error err) -> Error err -- TODO Combine multiple possible errors.
+    (Result (Int _), Result t) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+    (Result t, Result (Int _)) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+    (Error stack' err, _) -> Error stack' err -- TODO Combine multiple possible errors.
+    (_, Error stack' err) -> Error stack' err -- TODO Combine multiple possible errors.
     (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
     (UnsetVariables xs, _) -> UnsetVariables xs
     (_, UnsetVariables ys) -> UnsetVariables ys
   Sum [] -> Result (Int 0)
-  Sum (e : es) -> reduce (Add e (Sum es)) rs is
+  Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -246,7 +250,7 @@ data EvaluationError =
   | AssertionIntError AssertionInt
   deriving (Eq, Show)
 
-data Result = Result Exp | UnsetVariables [String] | Error EvaluationError
+data Result = Result Exp | UnsetVariables [String] | Error [String] EvaluationError
   deriving (Eq, Show)
 
 data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
@@ -259,5 +263,5 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 data Input = Input String Exp
   deriving Show
 
-isTypeMismatch (Error (TypeMismatch _)) = True
+isTypeMismatch (Error _ (TypeMismatch _)) = True
 isTypeMismatch _ = False
