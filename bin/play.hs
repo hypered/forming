@@ -70,7 +70,6 @@ rules =
   , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17
   , rule_cycle
   ]
-  ++ form_1
 
 rule_1 = Rule "a" (Exp (Int 5))
 
@@ -108,20 +107,3 @@ rule_16 = Rule "q" (Exp (String "a"))
 rule_17 = Rule "r" (Exp (AssertInt (GreaterThan 1) (Name "e")))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
-
-
---------------------------------------------------------------------------------
-
--- A example form.
--- The second value must be provided if the first one is set to True.
---   $ runghc script.hs --set "has a cat" True --set "a cat's name" Tom form
---   Result (Object [("has a cat",Bool True),("a cat's name",Int 1)])
---
-form_1 =
-  [ Rule "has a cat" Unset
-  , Rule "a cat's name" Unset
-  , Rule "form" (Exp (Cond
-      (Name "has a cat")
-      (Names ["has a cat", "a cat's name"])
-      (Names ["has a cat"])))
-  ]
