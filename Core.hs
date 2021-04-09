@@ -1,12 +1,53 @@
 -- This file contains the main code. To interact with it during development,
 -- use bin/play.hs.
 
+{-# LANGUAGE RecordWildCards #-}
+
 module Core where
+
+import System.Environment (getArgs)
 
 import Data.List (nub)
 
 
 --------------------------------------------------------------------------------
+run Computation{..} = do
+  args <- getArgs
+
+  case args of
+
+    -- List all rules.
+    ["--list"] -> mapM_ print cRules
+
+    -- List unset names.
+    ["--unset"] -> mapM_ print (filter isUnset cRules)
+
+    -- List unset names involved in a specific rule.
+    ["--unset", name] -> print (gatherUnsets name cRules)
+
+    -- Show a help message.
+    ["--help"] -> do
+      putStrLn cName
+      -- Evaluate without input to give a hint a possible user inputs.
+      case (evaluate cMain cRules []) of
+        UnsetVariables names -> printResult (UnsetVariables names)
+        Result _ -> putStrLn "This computation doesn't require any user input."
+
+    -- Parse inputs of the form `--set a 1` and evaluate one rule.
+    rest -> do
+      let (mname, is) = makeInputs rest []
+      printResult (evaluate (maybe cMain id mname) cRules is)
+
+printResult r = case r of
+  UnsetVariables names -> do
+    putStrLn "This computation expects the following user inputs:\n"
+    mapM_ (putStrLn . ("  " ++)) names
+    putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
+  Result (Int x) -> print x
+
+
+--------------------------------------------------------------------------------
+-- | This assemble inputs but also return an optional name to be evaluated.
 makeInputs ("--set" : var : val : rest) is = case val of
   _ | all (`elem` "0123456789") val ->
     makeInputs rest (is ++ [Input var (Int $ read val)])
@@ -19,8 +60,8 @@ makeInputs ("--set" : var : val : rest) is = case val of
     makeInputs rest (is ++ [Input var (String val)])
 makeInputs ["--set"] _ = error "TODO Usage."
 makeInputs ["--set", _] _ = error "TODO Usage."
-makeInputs [name] is = (name, is)
-makeInputs _ _ = error "TODO Usage."
+makeInputs [name] is = (Just name, is)
+makeInputs [] is = (Nothing, is)
 
 isUnset (Rule _ Unset) = True
 isUnset _ = False
@@ -123,7 +164,6 @@ check a@(GreaterThan y) _x = case _x of
   _ -> Just (TypeMismatch ("Expected an Int, got " ++ show _x))
 
 
-
 --------------------------------------------------------------------------------
 -- TODO E.g. rule names cannot be the empty string, or multiple rules with the
 -- same names cannot be present (although this one is also detected at
@@ -135,7 +175,7 @@ validate = undefined
 -- one to evaluate.
 data Computation = Computation
   { cName :: String
-  , cMain :: String -- Must appear in the cRules.
+  , cMain :: String -- Default rule to evaluate, must appear in the cRules.
   , cRules :: [Rule]
   }
 

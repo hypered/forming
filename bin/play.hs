@@ -1,8 +1,6 @@
 -- This is the main development script: it can be loaded in GHCi or run from the
 -- command-line to play with the concepts of this library.
 
-{-# LANGUAGE RecordWildCards #-}
-
 module Main where
 
 import System.Environment (getArgs)
@@ -31,9 +29,10 @@ main = do
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule
     rest -> do
-      let (name, is) = makeInputs rest []
-      mapM_ print is
-      print (evaluate name rules is)
+      let (mname, is) = makeInputs rest []
+      case mname of
+        Nothing -> error "A rule name to be evaluated is required."
+        Just name -> print (evaluate name rules is)
 
 
 --------------------------------------------------------------------------------
