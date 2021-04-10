@@ -5,7 +5,8 @@ module Main where
 
 import System.Environment (getArgs)
 
-import Core
+import Forming
+
 
 --------------------------------------------------------------------------------
 main = print (all id tests, tests)

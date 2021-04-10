@@ -3,7 +3,7 @@
 
 {-# LANGUAGE RecordWildCards #-}
 
-module Core where
+module Forming where
 
 import Control.Arrow (first, right)
 import Data.ByteString.Lazy.Char8 (pack)
