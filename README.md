@@ -1,21 +1,28 @@
-# Publicodes, in Haskell
+# Forming
 
-Publicodes seems very interesting, even though it's based on YAML:
+Forming is an attempt to make it easy to describe user interfaces to collect
+data. These can be for insantance HTML forms or command-line interfaces.
+
+It has some ressemblance with Publicodes, which is based on YAML and
+implemented in TypeScript:
 https://github.com/betagouv/mon-entreprise/publicodes.
 
-It's written in TypeScript and I wonder if I could re-implement it in Haskell.
+The main idea of Forming is that it uses an AST to describe computations
+similar to a simple expression language (addition, if-then-else expressions,
+...) with two important things:
 
-I think this could be used to compute payrolls, but also to implement business
+- Computed values can be objects, which thus can represent a filled form.
+- Variables used in the computed expression can be "unset", meaning they have
+  to be filled when the expression is evaluated.
+
+This means the following: a form is a simple lazily evaluated expression that
+returns a structured representation of some of its variables, together with
+unset variables, which thus can be required and given as needed.
+
+Computations can be used to describe payrolls, but also to implement business
 rules regarding e.g. the creation of contract (e.g. what VAT rate can be used,
 if a risk declaration is required, ...).
 
-In addition, I think it can be used to create forms, by allowing to return
-objects (also called attribute sets, maps, dictionaries) that represent filled
-forms.
-
-In other words, it seems a form can be described as: a simple lazily evaluated
-expression that returns a structured representation of its input, possibly with
-a list of missing inputs.
 
 # Development
 
