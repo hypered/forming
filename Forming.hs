@@ -26,7 +26,7 @@ import Hypered.Html
   , generate')
 
 import Forming.Core
-import Forming.Html (exampleLoginForm)
+import Forming.Html (pageComputation)
 
 
 --------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ run c@Computation{..} = do
       let conf' = defaultConfig
             { cAddWrapper = False, cFont = IbmPlex, cStaticPath = "../../static" }
       generate' "form.html" "Forming"
-        conf' (const (exampleLoginForm c))
+        conf' (const (pageComputation c))
 
     -- List all rules.
     ["--list"] -> mapM_ print cRules
