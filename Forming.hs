@@ -24,6 +24,14 @@ run c@Computation{..} = do
 
   case args of
 
+    -- Show a help message.
+    ["--help"] -> do
+      putStrLn cName
+      -- Evaluate without input to give a hint a possible user inputs.
+      case evaluate [] cMain cRules [] of
+        UnsetVariables names -> printUnsetVariables names
+        Result _ -> putStrLn "This computation doesn't require any user input."
+
     -- List all rules.
     ["--list"] -> mapM_ print cRules
 
@@ -33,23 +41,16 @@ run c@Computation{..} = do
     -- List unset names involved in a specific rule.
     ["--unset", name] -> print (gatherUnsets name cRules)
 
-    -- Show a help message.
-    ["--help"] -> do
-      putStrLn cName
-      -- Evaluate without input to give a hint a possible user inputs.
-      case evaluate [] cMain cRules [] of
-        UnsetVariables names -> printUnsetVariables names
-        Result _ -> putStrLn "This computation doesn't require any user input."
-
     -- Parse inputs given as JSON and evaluate one rule.
     ["--json", s] -> runWithInputs c $ makeInputsFromJson s
     ["--json", s, name] -> runWithInputs c $
       right (first (const (Just name))) $ makeInputsFromJson s
 
-
     -- Parse inputs of the form `--set a 1` and evaluate one rule.
     rest -> runWithInputs c $ makeInputs rest []
 
+
+--------------------------------------------------------------------------------
 runWithInputs Computation{..} mis = case mis of
   Right (mname, is) ->
     case evaluate [] (maybe cMain id mname) cRules is of
