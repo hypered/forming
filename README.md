@@ -26,9 +26,15 @@ if a risk declaration is required, ...).
 
 # Features
 
+The CLIs produced with Forming:
+
 - Can represent simple computation (additions, if-then-else expressions)
 - Can represent forms by "computing" an object (i.e. a dict, or map)
 - User inputs can be given by `--set` arguments or as JSON with `--json`
+- Can list the rules involved in a computation
+- Can list the unset variables, possibly limited to the ones necessary for a
+  given rule
+- Can display a help message
 
 
 # Development
@@ -50,6 +56,25 @@ $ runghc bin/run-tests.hs
 
 
 # Example usage
+
+```
+$ runghc bin/trivial-1.hs 
+1
+
+$ runghc bin/trivial-a.hs 
+ERROR: missing user inputs.
+This computation expects the following user inputs:
+
+  a
+
+Use `--set a 1` to provide the value 1 to the input "a".
+
+$ runghc bin/trivial-a.hs --set a 1
+1
+
+$ runghc bin/trivial-a.hs --json '{"a": 1}'
+1
+```
 
 ```
 $ runghc bin/play.hs a
