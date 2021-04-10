@@ -33,6 +33,15 @@ $ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson])"
 - User inputs can be given by `--set` arguments or as JSON with `--json`
 
 
+# Tests
+
+Tests can be run with the following command:
+
+```
+$ runghc bin/run-tests.hs
+```
+
+
 # Example usage
 
 ```
