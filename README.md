@@ -24,6 +24,13 @@ rules regarding e.g. the creation of contract (e.g. what VAT rate can be used,
 if a risk declaration is required, ...).
 
 
+# Features
+
+- Can represent simple computation (additions, if-then-else expressions)
+- Can represent forms by "computing" an object (i.e. a dict, or map)
+- User inputs can be given by `--set` arguments or as JSON with `--json`
+
+
 # Development
 
 I currently use this Nix shell:
@@ -31,13 +38,6 @@ I currently use this Nix shell:
 ```
 $ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson])"
 ```
-
-
-# Features
-
-- Can represent simple computation (additions, if-then-else expressions)
-- Can represent forms by "computing" an object (i.e. a dict, or map)
-- User inputs can be given by `--set` arguments or as JSON with `--json`
 
 
 # Tests
