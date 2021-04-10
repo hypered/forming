@@ -17,6 +17,21 @@ In other words, it seems a form can be described as: a simple lazily evaluated
 expression that returns a structured representation of its input, possibly with
 a list of missing inputs.
 
+# Development
+
+I currently use this Nix shell:
+
+```
+$ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson])"
+```
+
+
+# Features
+
+- Can represent simple computation (additions, if-then-else expressions)
+- Can represent forms by "computing" an object (i.e. a dict, or map)
+- User inputs can be given by `--set` arguments or as JSON with `--json`
+
 
 # Example usage
 

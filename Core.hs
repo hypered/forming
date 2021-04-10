@@ -5,6 +5,13 @@
 
 module Core where
 
+import Control.Arrow (first, right)
+import Data.ByteString.Lazy.Char8 (pack)
+import qualified Data.HashMap.Strict as H (toList)
+import Data.Aeson (decode, Value)
+import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
+import Data.Scientific (floatingOrInteger)
+import qualified Data.Text as T
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
@@ -12,7 +19,7 @@ import Data.List (nub)
 
 
 --------------------------------------------------------------------------------
-run Computation{..} = do
+run c@Computation{..} = do
   args <- getArgs
 
   case args of
@@ -34,22 +41,29 @@ run Computation{..} = do
         UnsetVariables names -> printUnsetVariables names
         Result _ -> putStrLn "This computation doesn't require any user input."
 
+    -- Parse inputs given as JSON and evaluate one rule.
+    ["--json", s] -> runWithInputs c $ makeInputsFromJson s
+    ["--json", s, name] -> runWithInputs c $
+      right (first (const (Just name))) $ makeInputsFromJson s
+
+
     -- Parse inputs of the form `--set a 1` and evaluate one rule.
-    rest -> do
-      case makeInputs rest [] of
-        Right (mname, is) ->
-          case evaluate [] (maybe cMain id mname) cRules is of
-            UnsetVariables names -> do
-              putStrLn "ERROR: missing user inputs."
-              printUnsetVariables names
-              exitFailure
-            Result x -> printValue 0 x
-            Error stack err -> do
-              putStr "ERROR: "
-              printError stack err
-        Left err -> do
-          putStrLn ("ERROR: " ++ err)
-          exitFailure
+    rest -> runWithInputs c $ makeInputs rest []
+
+runWithInputs Computation{..} mis = case mis of
+  Right (mname, is) ->
+    case evaluate [] (maybe cMain id mname) cRules is of
+      UnsetVariables names -> do
+        putStrLn "ERROR: missing user inputs."
+        printUnsetVariables names
+        exitFailure
+      Result x -> printValue 0 x
+      Error stack err -> do
+        putStr "ERROR: "
+        printError stack err
+  Left err -> do
+    putStrLn ("ERROR: " ++ err)
+    exitFailure
 
 printUnsetVariables names = do
   putStrLn "This computation expects the following user inputs:\n"
@@ -82,22 +96,35 @@ printValue indent v = case v of
 
 --------------------------------------------------------------------------------
 -- | This assemble inputs but also return an optional name to be evaluated.
-makeInputs ("--set" : var : val : rest) is = case val of
-  _ | all (`elem` "0123456789") val ->
-    makeInputs rest (is ++ [Input var (Int $ read val)])
-  "True" ->
-    makeInputs rest (is ++ [Input var (Bool True)])
-  "False" ->
-    makeInputs rest (is ++ [Input var (Bool False)])
-  _ ->
-    --TODO Add some type signature, or quotes araound strings.
-    makeInputs rest (is ++ [Input var (String val)])
+makeInputs :: [String] -> [Input] -> Either String (Maybe String, [Input])
+makeInputs ("--set" : var : val : rest) is =
+  makeInputs rest (is ++ [Input var $ parseInput val])
 makeInputs ["--set"] _ =
   Left "--set expects two arguments (none given here)"
 makeInputs ["--set", _] _ =
   Left "--set expects two arguments (only one given here)"
 makeInputs [name] is = Right (Just name, is)
 makeInputs [] is = Right (Nothing, is)
+
+makeInputsFromJson :: String -> Either String (Maybe String, [Input])
+makeInputsFromJson s = case decode (pack s) :: Maybe Value of
+  Just (A.Object kvs_) ->
+    let kvs = (H.toList kvs_)
+    in Right (Nothing, map (\(k, v) -> Input (T.unpack k) (parseInput' v)) kvs)
+  Just _ -> Left "input JSON is not an object."
+  Nothing -> Left "malformed input JSON."
+
+parseInput val = case val of
+  _ | all (`elem` "0123456789") val -> Int $ read val
+  "True" -> Bool True
+  "False" -> Bool False
+  _ -> String val -- TODO Add some type signature, or quotes araound strings.
+
+parseInput' (A.Bool x) = Bool x
+parseInput' (A.Number x) = case floatingOrInteger x of
+  Right  v -> Int v
+  Left _ -> error "TODO Support floats"
+parseInput' (A.String x) = String (T.unpack x)
 
 isUnset (Rule _ Unset) = True
 isUnset _ = False
