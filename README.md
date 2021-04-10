@@ -42,7 +42,7 @@ The CLIs produced with Forming:
 I currently use this Nix shell:
 
 ```
-$ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson])"
+$ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson pkgs.blaze-html])"
 ```
 
 
