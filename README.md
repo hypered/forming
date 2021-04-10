@@ -90,7 +90,7 @@ Result (Int 2)
 
 # Notes
 
-A simple rule:
+It seems in Publicodes that a simple rule:
 
 ```
 a: 5
