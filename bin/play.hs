@@ -8,59 +8,36 @@ import System.Environment (getArgs)
 import Core
 
 --------------------------------------------------------------------------------
-main = do
-  args <- getArgs
-
-  case args of
-
-    -- Run the tests
-    ["--run-tests"] -> print (all id tests, tests)
-
-    -- List all rules
-    ["--list"] -> mapM_ print rules
-
-    -- List unset names
-    ["--unset"] -> mapM_ print (filter isUnset rules)
-
-    -- List unset names involved in a specific rule
-    ["--unset", name] -> print (gatherUnsets name rules)
-
-    [] -> error "TODO Usage."
-
-    -- Parse inputs of the form `--set a 1` and evaluate one rule
-    rest -> do
-      let (mname, is) = makeInputs rest []
-      case mname of
-        Nothing -> error "A rule name to be evaluated is required."
-        Just name -> print (evaluate name rules is)
+main = print (all id tests, tests)
 
 
 --------------------------------------------------------------------------------
 tests =
-  [ evaluate "a" [] [] == Error NoSuchRule
-  , evaluate "a" [Rule "a" (Exp $ Int 5), Rule "a" (Exp $ Int 6)] [] == Error MultipleRules
-  , evaluate "a" [Rule "a" (Exp $ Int 5)] [] == Result (Int 5)
-  , evaluate "a" rules [] == Result (Int 5)
-  , evaluate "b" rules [] == Result (Int 6)
-  , evaluate "c" rules [] == Result (Int 6)
-  , evaluate "d" rules [] == Result (Int 6)
-  , evaluate "e" rules [] == UnsetVariables ["e"]
-  , evaluate "e" rules [Input "e" (Int 4)] == Result (Int 4)
-  , evaluate "f" rules [] == UnsetVariables ["e"]
-  , evaluate "f" rules [Input "e" (Int 4)] == Result (Int 4)
-  , evaluate "g" rules [] == Result (Int 11)
-  , evaluate "h" rules [] == Result (Int 17)
-  , evaluate "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
-  , isTypeMismatch $ evaluate "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
-  , isTypeMismatch $ evaluate "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))] []
-  , evaluate "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))] []
+  [ evaluate [] "a" [] [] == Error ["a"] (NoSuchRule "a")
+  , evaluate [] "a" [Rule "a" (Exp $ Int 5), Rule "a" (Exp $ Int 6)] [] ==
+    Error ["a"] (MultipleRules "a")
+  , evaluate [] "a" [Rule "a" (Exp $ Int 5)] [] == Result (Int 5)
+  , evaluate [] "a" rules [] == Result (Int 5)
+  , evaluate [] "b" rules [] == Result (Int 6)
+  , evaluate [] "c" rules [] == Result (Int 6)
+  , evaluate [] "d" rules [] == Result (Int 6)
+  , evaluate [] "e" rules [] == UnsetVariables ["e"]
+  , evaluate [] "e" rules [Input "e" (Int 4)] == Result (Int 4)
+  , evaluate [] "f" rules [] == UnsetVariables ["e"]
+  , evaluate [] "f" rules [Input "e" (Int 4)] == Result (Int 4)
+  , evaluate [] "g" rules [] == Result (Int 11)
+  , evaluate [] "h" rules [] == Result (Int 17)
+  , evaluate [] "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
+  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
+  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))] []
+  , evaluate [] "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))] []
       == Result (Int 1)
-  , isTypeMismatch $ evaluate "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))] []
-  , evaluate "l" rules [] == UnsetVariables ["i"]
-  , evaluate "l" rules [Input "i" (Bool True)] == Result (Int 5)
-  , evaluate "l" rules [Input "i" (Bool False)] == UnsetVariables ["e"]
-  , evaluate "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
-  , evaluate "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
+  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))] []
+  , evaluate [] "l" rules [] == UnsetVariables ["i"]
+  , evaluate [] "l" rules [Input "i" (Bool True)] == Result (Int 5)
+  , evaluate [] "l" rules [Input "i" (Bool False)] == UnsetVariables ["e"]
+  , evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
+  , evaluate [] "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
   ] 
 
 --------------------------------------------------------------------------------
