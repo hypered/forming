@@ -39,10 +39,17 @@ The CLIs produced with Forming:
 
 # Development
 
-I currently use this Nix shell:
+I currently use a Nix shell provided by `shell.nix`:
 
 ```
-$ nix-shell -p "haskellPackages.ghcWithPackages (pkgs: [pkgs.aeson pkgs.blaze-html])"
+$ nix-shell
+```
+
+I also need to bring code from the `design-system` repository. So e.g. when
+using `runghc`:
+
+```
+$ runghc -i../design-system bin/add.hs --html
 ```
 
 
