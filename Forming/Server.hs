@@ -195,16 +195,6 @@ runWithInputs' Computation{..} mis = case mis of
 makeInputsFromParams params = Right (Nothing,
   map (\(k, v) -> Input (B.unpack k) (parseInput . B.unpack $ head v)) (M.toList params))
 
--- TODO This is a copy of add.hs.
-addComputation =
-  Computation
-    "add"
-    "Compute the addition of two integers a and b."
-    "value"
-    [ Rule "value" (Exp (Add (Name "a") (Name "b")))
-    , Rule "a" Unset
-    , Rule "b" Unset
-    ]
 
 ----------------------------------------------------------------------
 -- | This route tells what this server is.
