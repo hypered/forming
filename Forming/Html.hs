@@ -30,7 +30,7 @@ pageComputation c@Computation{..} = do
 htmlComputation Computation{..} = do
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
-         ! A.action "/submit/xxxxxxxx"
+         ! A.action "/noteed/bf668742a23d957a81b43d9ef44ee89d/+submit"
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName
@@ -47,13 +47,14 @@ htmlComputation Computation{..} = do
       H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit —>"
 
 htmlRule Rule{..} = do
+  let iden = H.toValue rName -- TODO rules can have spaces or quotes
   H.div ! A.class_ "mv3" $
     H.div ! A.class_ "mb3" $ do
       H.label ! A.class_ "db fw6 mv1" $ H.toHtml rName
-              ! A.for "username"
+              ! A.for iden
       H.input ! A.class_ "input-reset bl-0 bt-0 br-0 bb bg-near-white pv2 ph2 w-100 outline-0 border-box"
-              ! A.label "username"
-              ! A.name "username"
-              ! A.id "username"
+              ! A.label iden
+              ! A.name iden
+              ! A.id iden
               ! A.type_ "text"
               ! A.placeholder ""

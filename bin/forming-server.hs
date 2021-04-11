@@ -1,6 +1,7 @@
 -- |
 -- A small HTTP server exposing an endpoint to submit a form.
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Main (main) where
@@ -154,7 +155,42 @@ formPage :: Handler App App ()
 formPage = writeLazyText . renderHtml $ document "Reesd" $
   pageComputation addComputation
 
-submitHandler = undefined
+submitHandler :: Handler App App ()
+submitHandler = do
+  logError "Handling .../+submit..."
+  ma <- getParam "a"
+  mb <- getParam "b"
+  writeLazyText . renderHtml $ document "Reesd" $ do
+    H.header $
+      navigationReesd
+    H.code . H.toHtml $ cName addComputation
+    H.code . H.toHtml $ show (ma, mb)
+    runWithInputs' addComputation $ makeInputsFromParams ma mb
+
+-- Same as runWithInputs but produces HTML instead of strings to stdout.
+runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
+runWithInputs' Computation{..} mis = case mis of
+  Right (mname, is) ->
+    case evaluate [] (maybe cMain id mname) cRules is of
+      UnsetVariables names -> do
+        H.code "ERROR: missing user inputs."
+        -- printUnsetVariables' names
+        -- TODO 400 Bad Request
+      Result x -> do
+        H.code "Result:"
+        H.code . H.toHtml . show $ x
+      Error stack err -> do
+        H.code "ERROR:"
+        H.code . H.toHtml . show $ (stack, err)
+  Left err -> do
+    H.code "ERROR:"
+    H.code . H.toHtml . show $ err
+    -- TODO 400 Bad Request, possibly 500 if the form is invalid
+
+makeInputsFromParams (Just a) (Just b) = Right (Nothing,
+  [ Input "a" (parseInput $ B.unpack a)
+  , Input "b" (parseInput $ B.unpack b)
+  ])
 
 -- TODO This is a copy of add.hs.
 addComputation =
