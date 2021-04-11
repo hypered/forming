@@ -30,7 +30,7 @@ pageComputation c@Computation{..} = do
 htmlComputation Computation{..} = do
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
-         ! A.action "/noteed/bf668742a23d957a81b43d9ef44ee89d/+submit"
+         ! A.action (H.toValue ("/noteed/" ++ cSlug ++ "/+submit"))
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName

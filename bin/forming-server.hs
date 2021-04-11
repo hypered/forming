@@ -11,11 +11,12 @@ import Control.Lens (makeLenses)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (object, Value, (.=))
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Snap.Core
-  ( getHeader, getParam, getPostParam, getRequest, ifTop, logError, method
+  ( getHeader, getParams, getPostParam, getRequest, ifTop, logError, method
   , modifyResponse, redirect', setHeader, writeBS, writeLazyText, writeText
   , Method(GET, POST))
 import Snap.Http.Server
@@ -61,14 +62,14 @@ _FORMING_SITE_DIR = unsafePerformIO $ getEnv "FORMING_SITE_DIR"
 
 ------------------------------------------------------------------------------
 main :: IO ()
-main = serveSnaplet defaultConfig appInit
+main = serveSnaplet defaultConfig $ appInit [addComputation]
 
 
 ------------------------------------------------------------------------------
-appInit :: SnapletInit App App
-appInit =
-  makeSnaplet "respan-edit" description Nothing $ do
-    addRoutes
+appInit :: [Computation] -> SnapletInit App App
+appInit cs =
+  makeSnaplet "forming-server" description Nothing $ do
+    addRoutes $
       [ ("", ifTop indexPage)
       , ("/about", ifTop aboutPage)
 
@@ -76,13 +77,12 @@ appInit =
       , ("/register", ifTop registerPage)
       , ("/reset", ifTop resetPage)
 
-        -- Mimic an existing form.
-      , ("/noteed/bf668742a23d957a81b43d9ef44ee89d", ifTop formPage)
-      , ("/noteed/bf668742a23d957a81b43d9ef44ee89d/ submit", ifTop submitHandler)
+      ] ++ concatMap makeRoute cs ++
+      [
 
         -- These are packaged in the respan-edit attribute in default.nix.
         -- In practice they will be served by Nginx.
-      , ("/static/css", serveDirectory' "static/css")
+        ("/static/css", serveDirectory' "static/css")
       , ("/static/fonts", serveDirectory' "static/fonts")
       , ("/static/img", serveDirectory' "static/img")
       , ("/favicon.ico", serveFile' "static/favicon.ico")
@@ -105,6 +105,12 @@ appInit =
   where
 
   description = "A simple HTTP server for Forming"
+
+-- TODO Validate slugs are slugs.
+makeRoute c =
+  [ (B.concat ["/noteed/", B.pack (cSlug c)], ifTop $ formPage c)
+  , (B.concat ["/noteed/", B.pack (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
+  ]
 
 
 ------------------------------------------------------------------------------
@@ -151,21 +157,19 @@ resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
 
 
 ----------------------------------------------------------------------
-formPage :: Handler App App ()
-formPage = writeLazyText . renderHtml $ document "Reesd" $
-  pageComputation addComputation
+formPage :: Computation -> Handler App App ()
+formPage c = writeLazyText . renderHtml $ document "Reesd" $ pageComputation c
 
-submitHandler :: Handler App App ()
-submitHandler = do
+submitHandler :: Computation -> Handler App App ()
+submitHandler c = do
   logError "Handling .../+submit..."
-  ma <- getParam "a"
-  mb <- getParam "b"
+  params <- getParams
   writeLazyText . renderHtml $ document "Reesd" $ do
     H.header $
       navigationReesd
-    H.code . H.toHtml $ cName addComputation
-    H.code . H.toHtml $ show (ma, mb)
-    runWithInputs' addComputation $ makeInputsFromParams ma mb
+    H.code . H.toHtml $ cName c
+    H.code . H.toHtml $ show params
+    runWithInputs' c $ makeInputsFromParams params
 
 -- Same as runWithInputs but produces HTML instead of strings to stdout.
 runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
@@ -187,10 +191,10 @@ runWithInputs' Computation{..} mis = case mis of
     H.code . H.toHtml . show $ err
     -- TODO 400 Bad Request, possibly 500 if the form is invalid
 
-makeInputsFromParams (Just a) (Just b) = Right (Nothing,
-  [ Input "a" (parseInput $ B.unpack a)
-  , Input "b" (parseInput $ B.unpack b)
-  ])
+-- I guess I can use `head` here since I assume getParams returns a list only
+-- when there is at least one Param.
+makeInputsFromParams params = Right (Nothing,
+  map (\(k, v) -> Input (B.unpack k) (parseInput . B.unpack $ head v)) (M.toList params))
 
 -- TODO This is a copy of add.hs.
 addComputation =
