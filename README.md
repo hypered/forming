@@ -134,6 +134,15 @@ Result (Int 2)
 ```
 
 
+# See also
+
+Source of inspiration could be:
+
+- Netlify, in particular their Forms offering
+- Publicodes
+- Typeform
+
+
 # Notes
 
 It seems in Publicodes that a simple rule:
