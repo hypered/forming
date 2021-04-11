@@ -14,4 +14,11 @@ main = defaultMain
       , Rule "a" Unset
       , Rule "b" Unset
       ]
+  , Computation
+      "greater-than-10"
+      "A form to obtain an integer greater than 10."
+      "value"
+      [ Rule "value" (Exp (AssertInt (GreaterThan 10) (Name "a")))
+      , Rule "a" Unset
+      ]
   ]

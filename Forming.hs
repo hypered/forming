@@ -27,6 +27,7 @@ import Hypered.Html
 
 import Forming.Core
 import Forming.Html (pageComputation)
+import Forming.Server (runServer)
 
 
 --------------------------------------------------------------------------------
@@ -38,6 +39,8 @@ defaultMain cs = do
     ["--help"] -> do
       putStrLn "Available computations:"
       mapM_ (putStrLn . (\c -> "  " ++ cSlug c ++ "  " ++ cName c)) cs
+
+    ["--serve"] -> runServer cs
 
     slug : rest -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
       Just c -> run c rest

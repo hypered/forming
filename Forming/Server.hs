@@ -4,7 +4,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Main (main) where
+module Forming.Server where
 
 import Control.Concurrent (threadDelay)
 import Control.Lens (makeLenses)
@@ -24,7 +24,7 @@ import Snap.Http.Server
   , ConfigLog(ConfigFileLog)
   )
 import Snap.Snaplet
-  ( addRoutes, makeSnaplet, serveSnaplet, Handler, SnapletInit
+  ( addRoutes, makeSnaplet, serveSnapletNoArgParsing, Handler, SnapletInit
   )
 import Snap.Util.FileServe (serveDirectory, serveFile)
 import System.Environment (getEnv)
@@ -42,7 +42,7 @@ import Hypered.Html
   ( loginForm, navigationReesd, registerForm, resetForm
   )
 
-import Forming
+import Forming.Core
 import Forming.Html
 
 
@@ -61,8 +61,7 @@ _FORMING_SITE_DIR = unsafePerformIO $ getEnv "FORMING_SITE_DIR"
 
 
 ------------------------------------------------------------------------------
-main :: IO ()
-main = serveSnaplet defaultConfig $ appInit [addComputation]
+runServer cs = serveSnapletNoArgParsing defaultConfig $ appInit cs
 
 
 ------------------------------------------------------------------------------
