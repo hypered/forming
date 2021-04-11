@@ -5,8 +5,9 @@ import Forming
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = run $
+main = defaultMainOne $
   Computation
+    "greater-than-10"
     "A form to obtain an integer greater than 10."
     "value"
     [ Rule "value" (Exp (AssertInt (GreaterThan 10) (Name "a")))

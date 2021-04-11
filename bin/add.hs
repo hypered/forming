@@ -5,8 +5,9 @@ import Forming
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = run $
+main = defaultMainOne $
   Computation
+    "add"
     "Compute the addition of two integers a and b."
     "value"
     [ Rule "value" (Exp (Add (Name "a") (Name "b")))

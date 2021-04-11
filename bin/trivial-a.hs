@@ -5,8 +5,9 @@ import Forming
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = run $
+main = defaultMainOne $
   Computation
+    "trivial-a"
     "Compute a user input."
     "value"
     [ Rule "value" (Exp (Name "a"))

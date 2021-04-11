@@ -5,8 +5,9 @@ import Forming
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = run $
+main = defaultMainOne $
   Computation
+    "has-a-cat"
     "A form to obtain a cat's name, if there is a cat."
     "form"
     form_1

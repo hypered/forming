@@ -212,7 +212,8 @@ validate = undefined
 -- A computation, could also be called a form, is a list of rules with a main
 -- one to evaluate.
 data Computation = Computation
-  { cName :: String
+  { cSlug :: String -- ^ A short name, that can be used in URLs.
+  , cName :: String -- ^ A display name, can contain spaces.
   , cMain :: String -- Default rule to evaluate, must appear in the cRules.
   , cRules :: [Rule]
   }

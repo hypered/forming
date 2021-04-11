@@ -195,6 +195,7 @@ makeInputsFromParams (Just a) (Just b) = Right (Nothing,
 -- TODO This is a copy of add.hs.
 addComputation =
   Computation
+    "add"
     "Compute the addition of two integers a and b."
     "value"
     [ Rule "value" (Exp (Add (Name "a") (Name "b")))

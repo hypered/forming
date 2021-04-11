@@ -5,8 +5,9 @@ import Forming
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = run $
+main = defaultMainOne $
   Computation
+    "add-greater-than-10"
     "Compute the addition of two integers a and b. The result must be greater\n\
     \than 10."
     "value"

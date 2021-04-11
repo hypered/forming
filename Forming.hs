@@ -30,8 +30,33 @@ import Forming.Html (pageComputation)
 
 
 --------------------------------------------------------------------------------
-run c@Computation{..} = do
+defaultMain cs = do
   args <- getArgs
+
+  case args of
+
+    ["--help"] -> do
+      putStrLn "Available computations:"
+      mapM_ (putStrLn . (\c -> "  " ++ cSlug c ++ "  " ++ cName c)) cs
+
+    slug : rest -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
+      Just c -> run c rest
+      Nothing -> do
+        putStrLn "ERROR: the given computation slug doesn't exist."
+        exitFailure
+
+    [] -> do
+      putStrLn "ERROR: a computation slug is expected."
+      putStrLn "Run with --help to see the available computations."
+      exitFailure
+
+defaultMainOne c = do
+  args <- getArgs
+  run c args
+
+
+--------------------------------------------------------------------------------
+run c@Computation{..} args = do
 
   case args of
 
