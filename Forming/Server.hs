@@ -76,7 +76,7 @@ appInit cs =
       , ("/register", ifTop registerPage)
       , ("/reset", ifTop resetPage)
 
-      , ("/noteed", ifTop $ namespacePage cs)
+      , ("/noteed", ifTop $ namespacePage "noteed" cs)
       ] ++ concatMap makeRoute cs ++
       [
 
@@ -109,6 +109,7 @@ appInit cs =
 -- TODO Validate slugs are slugs.
 makeRoute c =
   [ (B.concat ["/noteed/", B.pack (cSlug c)], ifTop $ formPage c)
+  , (B.concat ["/noteed/", B.pack (cSlug c), "/ view"], ifTop $ formDocPage "noteed" c)
   , (B.concat ["/noteed/", B.pack (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
   ]
 
@@ -157,19 +158,28 @@ resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
 
 
 ----------------------------------------------------------------------
-namespacePage cs = writeLazyText . renderHtml $ document "Reesd" $ do
+namespacePage :: String -> [Computation] -> Handler App App ()
+namespacePage namespace cs = writeLazyText . renderHtml $ document "Reesd" $ do
   H.header $
     navigationReesd
+  H.span $ do
+    H.code (H.toHtml namespace)
   H.ul $
     mapM_ htmlComputationItem cs
 
 htmlComputationItem Computation{..} =
-  H.li $
-    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ H.toHtml cName
+  H.li $ do
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
+    H.preEscapedToHtml (" &mdash; " :: String)
+    H.toHtml cName
 
 ----------------------------------------------------------------------
 formPage :: Computation -> Handler App App ()
-formPage c = writeLazyText . renderHtml $ document "Reesd" $ pageComputation c
+formPage c = writeLazyText . renderHtml $ document' True "Reesd" $ pageComputation c
+
+formDocPage :: String -> Computation -> Handler App App ()
+formDocPage namespace c = writeLazyText . renderHtml $ document "Reesd" $
+  pageComputationDoc namespace c
 
 submitHandler :: Computation -> Handler App App ()
 submitHandler c = do
@@ -227,7 +237,10 @@ checksSba = do
 ----------------------------------------------------------------------
 -- TODO Re-use the document function in Hypered.Html.
 document :: Text -> Html -> Html
-document title body = do
+document = document' False
+
+document' :: Bool -> Text -> Html -> Html
+document' center title body = do
   H.docType
   H.html $ do
     H.head $ do
@@ -244,5 +257,12 @@ document title body = do
           ]
 
     H.body ! A.class_ "hy-ibm-plex" $
-      H.div ! A.class_ "flex flex-column justify-between min-height-vh-100 mw8 center pa4 lh-copy" $
-        body
+      if center
+      then
+        -- It seems that combining the flex stuff with `center` in the content
+        -- (`body` here) doesn't work. So we provide this option.
+        H.div ! A.class_ "min-height-vh-100 mw8 center pa4 lh-copy" $
+          body
+      else
+        H.div ! A.class_ "flex flex-column justify-between min-height-vh-100 mw8 center pa4 lh-copy" $
+          body

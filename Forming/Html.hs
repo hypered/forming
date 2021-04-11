@@ -20,14 +20,30 @@ import Forming.Core (gatherUnsets, Computation(..), Rule(..))
 
 ------------------------------------------------------------------------------
 pageComputation c@Computation{..} = do
+  H.div ! A.class_ "center mw7" $ do
+    H.p $ H.toHtml cName
+    htmlComputation c
+    H.div ! A.class_ "tc moon-gray pt4" $ "Powered by Reesd"
+
+pageComputationDoc namespace c@Computation{..} = do
   H.header $
     navigationReesd
-  H.p $ H.toHtml cName
-  htmlComputation c
+  H.span $ do
+    H.code (H.toHtml namespace)
+    " / "
+    H.code (H.toHtml cSlug)
+  H.p $ do
+    H.toHtml cName
+    " "
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+  H.code . H.toHtml $ "Main rule: " ++ cMain
+  mapM_ (H.code . H.toHtml . show) cRules
 
 
 ------------------------------------------------------------------------------
 htmlComputation Computation{..} = do
+  -- Note that `center` seems to require the containing element doesn't use the
+  -- flex stuff.
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
          ! A.action (H.toValue ("/noteed/" ++ cSlug ++ "/+submit"))
