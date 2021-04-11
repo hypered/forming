@@ -176,6 +176,7 @@ gatherUnsets name rs = case filter ((== name) . rName) rs of
 gatherUnsets' rs e = case e of
   Bool x -> Right []
   Int x -> Right []
+  AssertInt _ e1 -> gatherUnsets' rs e1
   String x -> Right []
   List [] -> Right []
   List (e : es) -> case gatherUnsets' rs e of
