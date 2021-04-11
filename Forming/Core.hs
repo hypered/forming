@@ -152,6 +152,7 @@ reduce stack e rs is = case e of
     (Result (Int a), Result (Int b)) -> Result (Int (a + b))
     (Result (Int _), Result t) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
     (Result t, Result (Int _)) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+    (Result _, Result _) -> Error stack (TypeMismatch $ "Expected two Ints")
     (Error stack' err, _) -> Error stack' err -- TODO Combine multiple possible errors.
     (_, Error stack' err) -> Error stack' err -- TODO Combine multiple possible errors.
     (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
