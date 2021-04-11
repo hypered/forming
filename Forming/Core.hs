@@ -17,6 +17,7 @@ import System.Exit (exitFailure)
 
 
 --------------------------------------------------------------------------------
+runWithInputs :: Computation -> Either String (Maybe String, [Input]) -> IO ()
 runWithInputs Computation{..} mis = case mis of
   Right (mname, is) ->
     case evaluate [] (maybe cMain id mname) cRules is of
@@ -82,10 +83,11 @@ makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Nothing -> Left "malformed input JSON."
 
 parseInput val = case val of
-  _ | all (`elem` ("0123456789" :: String)) val -> Int $ read val
+  _ | length val > 0 && all (`elem` ("0123456789" :: String)) val ->
+    Int $ read val
   "True" -> Bool True
   "False" -> Bool False
-  _ -> String val -- TODO Add some type signature, or quotes araound strings.
+  _ -> String val -- TODO Add some type signature, or quotes around strings.
 
 parseInput' (A.Bool x) = Bool x
 parseInput' (A.Number x) = case floatingOrInteger x of
