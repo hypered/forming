@@ -76,6 +76,7 @@ appInit cs =
       , ("/register", ifTop registerPage)
       , ("/reset", ifTop resetPage)
 
+      , ("/noteed", ifTop $ namespacePage cs)
       ] ++ concatMap makeRoute cs ++
       [
 
@@ -154,6 +155,17 @@ resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
     \ to that address."
   resetForm
 
+
+----------------------------------------------------------------------
+namespacePage cs = writeLazyText . renderHtml $ document "Reesd" $ do
+  H.header $
+    navigationReesd
+  H.ul $
+    mapM_ htmlComputationItem cs
+
+htmlComputationItem Computation{..} =
+  H.li $
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ H.toHtml cName
 
 ----------------------------------------------------------------------
 formPage :: Computation -> Handler App App ()
