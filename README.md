@@ -52,6 +52,13 @@ using `runghc`:
 $ runghc -i../design-system bin/add.hs --html
 ```
 
+The HTTP server needs to know the location of the `static/` directory. This is
+given through an environment variable:
+
+```
+$ FORMING_SITE_DIR=../design-system runghc -i../design-system bin/forming-server.hs
+```
+
 
 # Tests
 

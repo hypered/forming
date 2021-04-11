@@ -40,6 +40,9 @@ import Hypered.Html
   ( loginForm, navigationReesd, registerForm, resetForm
   )
 
+import Forming
+import Forming.Html
+
 
 ------------------------------------------------------------------------------
 data App = App
@@ -71,6 +74,10 @@ appInit =
       , ("/login", ifTop loginPage)
       , ("/register", ifTop registerPage)
       , ("/reset", ifTop resetPage)
+
+        -- Mimic an existing form.
+      , ("/noteed/bf668742a23d957a81b43d9ef44ee89d", ifTop formPage)
+      , ("/noteed/bf668742a23d957a81b43d9ef44ee89d/ submit", ifTop submitHandler)
 
         -- These are packaged in the respan-edit attribute in default.nix.
         -- In practice they will be served by Nginx.
@@ -141,6 +148,23 @@ resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
     \ to that address."
   resetForm
 
+
+----------------------------------------------------------------------
+formPage :: Handler App App ()
+formPage = writeLazyText . renderHtml $ document "Reesd" $
+  pageComputation addComputation
+
+submitHandler = undefined
+
+-- TODO This is a copy of add.hs.
+addComputation =
+  Computation
+    "Compute the addition of two integers a and b."
+    "value"
+    [ Rule "value" (Exp (Add (Name "a") (Name "b")))
+    , Rule "a" Unset
+    , Rule "b" Unset
+    ]
 
 ----------------------------------------------------------------------
 -- | This route tells what this server is.
