@@ -10,7 +10,7 @@ import Data.ByteString.Lazy.Char8 (pack)
 import qualified Data.HashMap.Strict as H (toList)
 import Data.Aeson (decode, Value)
 import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
-import Data.List (nub)
+import Data.List (nub, nubBy)
 import Data.Scientific (floatingOrInteger)
 import qualified Data.Text as T
 import System.Exit (exitFailure)
@@ -166,6 +166,7 @@ lookupInput name is = lookup name is'
 
 -- TODO There is no sharing, so multiple occurence of same name is computed
 -- multiple times.
+gatherUnsets :: String -> [Rule] -> Either EvaluationError [Rule]
 gatherUnsets name rs = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
     Unset -> Right [r]
@@ -173,6 +174,7 @@ gatherUnsets name rs = case filter ((== name) . rName) rs of
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
 
+gatherUnsets' :: [Rule] -> Exp -> Either EvaluationError [Rule]
 gatherUnsets' rs e = case e of
   Bool x -> Right []
   Int x -> Right []
@@ -181,7 +183,7 @@ gatherUnsets' rs e = case e of
   List [] -> Right []
   List (e : es) -> case gatherUnsets' rs e of
     Right x -> case gatherUnsets' rs (List es) of
-      Right xs -> Right (x ++ xs)
+      Right xs -> Right (nubBy (\a b -> rName a == rName b) (x ++ xs))
       Left err -> Left err
     Left err -> Left err
   Object kvs -> gatherUnsets' rs (List (map snd kvs))

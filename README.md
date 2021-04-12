@@ -72,10 +72,10 @@ $ runghc bin/run-tests.hs
 # Example usage
 
 ```
-$ runghc bin/trivial-1.hs 
+$ runghc bin/trivial-1.hs
 1
 
-$ runghc bin/trivial-a.hs 
+$ runghc bin/trivial-a.hs
 ERROR: missing user inputs.
 This computation expects the following user inputs:
 

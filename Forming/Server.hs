@@ -199,7 +199,7 @@ runWithInputs' Computation{..} mis = case mis of
     case evaluate [] (maybe cMain id mname) cRules is of
       UnsetVariables names -> do
         H.code "ERROR: missing user inputs."
-        -- printUnsetVariables' names
+        printUnsetVariables' names
         -- TODO 400 Bad Request
       Result x -> do
         H.code "Result:"
@@ -213,9 +213,20 @@ runWithInputs' Computation{..} mis = case mis of
     -- TODO 400 Bad Request, possibly 500 if the form is invalid
 
 -- I guess I can use `head` here since I assume getParams returns a list only
--- when there is at least one Param.
+-- when there is at least one Param. We ignore empty strings as they are
+-- submitted when users don't do anything.
 makeInputsFromParams params = Right (Nothing,
-  map (\(k, v) -> Input (B.unpack k) (parseInput . B.unpack $ head v)) (M.toList params))
+  filter (not . isEmptyString) $
+  map
+    (\(k, v) -> Input (B.unpack k) (parseInput . B.unpack $ head v))
+    (M.toList params))
+
+isEmptyString (Input _ (String [])) = True
+isEmptyString _ = False
+
+printUnsetVariables' names = do
+  H.code "This computation expects the following user inputs:\n"
+  mapM_ (H.code . H.toHtml . ("  " ++)) names
 
 
 ----------------------------------------------------------------------

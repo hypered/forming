@@ -29,15 +29,28 @@ pageComputationDoc namespace c@Computation{..} = do
   H.header $
     navigationReesd
   H.span $ do
-    H.code (H.toHtml namespace)
+    H.a ! A.href (H.toValue $ "/" ++ namespace)
+        ! A.class_ "black" $
+      H.code (H.toHtml namespace)
     " / "
     H.code (H.toHtml cSlug)
   H.p $ do
     H.toHtml cName
     " "
     H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
-  H.code . H.toHtml $ "Main rule: " ++ cMain
-  mapM_ (H.code . H.toHtml . show) cRules
+  H.div $ do
+    "Main rule: "
+    H.code . H.toHtml $ cMain
+  H.div $ do
+    "Inputs: "
+  H.code . H.pre $
+    case gatherUnsets cMain cRules of
+      Left err -> error (show err)
+      Right rules -> mapM_ (H.toHtml . (++ "\n") . show) rules
+  H.div $ do
+    "Rules:"
+  H.code . H.pre $
+    mapM_ (H.toHtml . (++ "\n") . show) cRules
 
 
 ------------------------------------------------------------------------------
@@ -52,17 +65,13 @@ htmlComputation Computation{..} = do
       H.h2 $ H.toHtml cName
       case gatherUnsets cMain cRules of
         Left err -> error (show err)
-        Right rules -> mapM_ htmlRule rules
-      H.a ! A.class_ "black no-underline hy-hover-blue"
-          ! A.href "/reset"
-          $ "Reset password"
+        Right rules -> mapM_ htmlInput rules
     H.div ! A.class_ "flex justify-between" $ do
-      H.a ! A.class_ "bg-white b--black black ph3 pb4 pt3 tl w-100 dib no-underline ba bw1"
-          ! A.href "/register"
-          $ "Register"
-      H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit —>"
+      H.div ! A.class_ "bg-white b--black black ph3 pb4 pt3 tl w-100 dib no-underline ba bw1"
+          $ ""
+      H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit →"
 
-htmlRule Rule{..} = do
+htmlInput Rule{..} = do
   let iden = H.toValue rName -- TODO rules can have spaces or quotes
   H.div ! A.class_ "mv3" $
     H.div ! A.class_ "mb3" $ do
