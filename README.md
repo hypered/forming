@@ -65,17 +65,17 @@ $ FORMING_SITE_DIR=../design-system runghc -i../design-system bin/forming-server
 Tests can be run with the following command:
 
 ```
-$ runghc bin/run-tests.hs
+$ runghc -i../design-system bin/run-tests.hs
 ```
 
 
 # Example usage
 
 ```
-$ runghc bin/trivial-1.hs
+$ runghc -i../design-system bin/forming-examples.hs trivial-1
 1
 
-$ runghc bin/trivial-a.hs
+$ runghc -i../design-system bin/forming-examples.hs trivial-a
 ERROR: missing user inputs.
 This computation expects the following user inputs:
 
@@ -83,10 +83,10 @@ This computation expects the following user inputs:
 
 Use `--set a 1` to provide the value 1 to the input "a".
 
-$ runghc bin/trivial-a.hs --set a 1
+$ runghc -i../design-system bin/forming-examples.hs trivial-a --set a 1
 1
 
-$ runghc bin/trivial-a.hs --json '{"a": 1}'
+$ runghc -i../design-system bin/forming-examples.hs trivial-a --json '{"a": 1}'
 1
 ```
 
