@@ -240,11 +240,15 @@ data Exp =
     -- values ?
   | Int Int | AssertInt AssertionInt Exp
   | String String
+
   | List [Exp]
   | Object [(String, Exp)] -- TODO Use a Map.
+
   | Name String
   | Names [String] -- ^ I think this is similar to Nix's `inherit`.
+
   | Cond Exp Exp Exp -- if _ then _ else _
+
   | Add Exp Exp
   | Sum [Exp]
   deriving (Eq, Show)
