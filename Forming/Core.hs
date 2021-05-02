@@ -150,6 +150,8 @@ reduce stack e rs is = case e of
     UnsetVariables xs -> UnsetVariables xs
   Add e1 e2 -> binop stack rs is (+) e1 e2
   Sub e1 e2 -> binop stack rs is (-) e1 e2
+  Mul e1 e2 -> binop stack rs is (*) e1 e2
+  Div e1 e2 -> binop stack rs is div e1 e2
   Sum [] -> Result (Int 0)
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
 
@@ -203,6 +205,8 @@ gatherUnsets' rs e = case e of
   Cond e1 e2 e3 -> gatherUnsets' rs (List [e1, e2, e3])
   Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
   Sub e1 e2 -> gatherUnsets' rs (List [e1, e2])
+  Mul e1 e2 -> gatherUnsets' rs (List [e1, e2])
+  Div e1 e2 -> gatherUnsets' rs (List [e1, e2])
   Sum es -> gatherUnsets' rs (List es)
 
 -- | Giving the unevaluated expression is used in the special case it is a
@@ -263,6 +267,8 @@ data Exp =
 
   | Add Exp Exp
   | Sub Exp Exp
+  | Mul Exp Exp
+  | Div Exp Exp
   | Sum [Exp]
   deriving (Eq, Show)
 
