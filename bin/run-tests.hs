@@ -27,6 +27,7 @@ tests =
   , evaluate [] "f" rules [] == UnsetVariables ["e"]
   , evaluate [] "f" rules [Input "e" (Int 4)] == Result (Int 4)
   , evaluate [] "g" rules [] == Result (Int 11)
+  , evaluate [] "g-sub" rules [] == Result (Int (- 1))
   , evaluate [] "h" rules [] == Result (Int 17)
   , evaluate [] "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
   , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
@@ -44,7 +45,8 @@ tests =
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
 rules =
-  [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_8, rule_9
+  [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7, rule_7sub
+  , rule_8, rule_9
   , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17
   , rule_cycle
   ]
@@ -63,6 +65,7 @@ rule_5 = Rule "e" Unset
 rule_6 = Rule "f" (Exp (Name "e"))
 
 rule_7 = Rule "g" (Exp (Add (Name "a") (Name "b")))
+rule_7sub = Rule "g-sub" (Exp (Sub (Name "a") (Name "b")))
 
 rule_8 = Rule "h" (Exp (Sum [Name "a", Name "b", Name "c"]))
 

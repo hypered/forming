@@ -148,18 +148,29 @@ reduce stack e rs is = case e of
     (Result t) -> Error stack (TypeMismatch $ "Expected a Bool, got " ++ show t)
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Add e1 e2 -> case (reduce stack e1 rs is, reduce stack e2 rs is) of
-    (Result (Int a), Result (Int b)) -> Result (Int (a + b))
-    (Result (Int _), Result t) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
-    (Result t, Result (Int _)) -> Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
-    (Result _, Result _) -> Error stack (TypeMismatch $ "Expected two Ints")
-    (Error stack' err, _) -> Error stack' err -- TODO Combine multiple possible errors.
-    (_, Error stack' err) -> Error stack' err -- TODO Combine multiple possible errors.
-    (UnsetVariables xs, UnsetVariables ys) -> UnsetVariables (nub $ xs ++ ys)
-    (UnsetVariables xs, _) -> UnsetVariables xs
-    (_, UnsetVariables ys) -> UnsetVariables ys
+  Add e1 e2 -> binop stack rs is (+) e1 e2
+  Sub e1 e2 -> binop stack rs is (-) e1 e2
   Sum [] -> Result (Int 0)
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
+
+binop stack rs is f e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
+  (Result (Int a), Result (Int b)) -> Result (Int (f a b))
+  (Result (Int _), Result t) ->
+    Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+  (Result t, Result (Int _)) ->
+    Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+  (Result _, Result _) ->
+    Error stack (TypeMismatch $ "Expected two Ints")
+  (Error stack' err, _) ->
+    Error stack' err -- TODO Combine multiple possible errors.
+  (_, Error stack' err) ->
+    Error stack' err -- TODO Combine multiple possible errors.
+  (UnsetVariables xs, UnsetVariables ys) ->
+    UnsetVariables (nub $ xs ++ ys)
+  (UnsetVariables xs, _) ->
+    UnsetVariables xs
+  (_, UnsetVariables ys) ->
+    UnsetVariables ys
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -191,6 +202,7 @@ gatherUnsets' rs e = case e of
   Names names -> gatherUnsets' rs (List (map Name names))
   Cond e1 e2 e3 -> gatherUnsets' rs (List [e1, e2, e3])
   Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
+  Sub e1 e2 -> gatherUnsets' rs (List [e1, e2])
   Sum es -> gatherUnsets' rs (List es)
 
 -- | Giving the unevaluated expression is used in the special case it is a
@@ -250,6 +262,7 @@ data Exp =
   | Cond Exp Exp Exp -- if _ then _ else _
 
   | Add Exp Exp
+  | Sub Exp Exp
   | Sum [Exp]
   deriving (Eq, Show)
 
