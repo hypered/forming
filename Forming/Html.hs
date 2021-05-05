@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Forming.Html where
 
+import Data.List (intersperse)
 import Data.Text (Text)
 import qualified Data.Text.Lazy.IO as T
 import System.FilePath (joinPath, splitPath, takeDirectory, FilePath, (</>))
@@ -72,15 +73,29 @@ htmlComputation Computation{..} = do
       H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit →"
 
 htmlInput :: (Rule, Maybe Type) -> Html
-htmlInput (Rule{..}, _) = do
+htmlInput (Rule{..}, mtype) = do
   let iden = H.toValue rName -- TODO rules can have spaces or quotes
   H.div ! A.class_ "mv3" $
     H.div ! A.class_ "mb3" $ do
-      H.label ! A.class_ "db fw6 mv1" $ H.toHtml rName
-              ! A.for iden
+      H.label ! A.class_ "db fw6 mv1"
+              ! A.for iden $
+        H.span $ do
+          H.toHtml rName
+          case mtype of
+            Nothing -> return ()
+            Just t -> do
+              " "
+              htmlType t
       H.input ! A.class_ "input-reset bl-0 bt-0 br-0 bb bg-near-white pv2 ph2 w-100 outline-0 border-box"
               ! A.label iden
               ! A.name iden
               ! A.id iden
               ! A.type_ "text"
               ! A.placeholder ""
+
+htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.toHtml $
+  case t of
+    TBool -> "Bool"
+    TInt -> "Int"
+    TString -> "String"
+    TEnum xs -> concat $ intersperse "|" xs
