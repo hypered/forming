@@ -43,8 +43,10 @@ printError stack err = case err of
   MultipleRules name -> putStrLn $
     "multiple rules have the same name \"" ++ name ++ "\"."
   Cycles -> putStrLn "The rules form a cycle."
-  TypeMismatch err -> do
-    putStrLn $ "type mismatch: " ++ err
+  TypeMismatch mname err -> do
+    putStrLn $ "type mismatch: " ++
+      err ++
+      maybe "" (\name -> " for the variable \"" ++ name ++ "\"") mname
     putStrLn $ "while evaluating rules " ++ show stack
   AssertionIntError mname err -> do
     putStrLn $ "an assertion has failed: " ++
@@ -122,6 +124,12 @@ reduce stack e rs is = case e of
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   String x -> Result (String x)
+  Annotation e t -> case reduce stack e rs is of
+    Result x -> case checkType e t x of
+      Nothing -> Result x
+      Just err -> Error stack err
+    Error stack' err -> Error stack' err
+    UnsetVariables xs -> UnsetVariables xs
   List [] -> Result (List [])
   List (e : es) -> case reduce stack e rs is of
     (Result x) -> case reduce stack (List es) rs is of
@@ -145,7 +153,7 @@ reduce stack e rs is = case e of
   Cond e1 e2 e3 -> case reduce stack e1 rs is of
     (Result (Bool True)) -> reduce stack e2 rs is
     (Result (Bool False)) -> reduce stack e3 rs is
-    (Result t) -> Error stack (TypeMismatch $ "Expected a Bool, got " ++ show t)
+    (Result t) -> Error stack (TypeMismatch Nothing $ "Expected a Bool, got " ++ show t)
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   Add e1 e2 -> binop stack rs is (+) e1 e2
@@ -158,11 +166,11 @@ reduce stack e rs is = case e of
 binop stack rs is f e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
   (Result (Int a), Result (Int b)) -> Result (Int (f a b))
   (Result (Int _), Result t) ->
-    Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+    Error stack (TypeMismatch Nothing $ "Expected an Int, got " ++ show t)
   (Result t, Result (Int _)) ->
-    Error stack (TypeMismatch $ "Expected an Int, got " ++ show t)
+    Error stack (TypeMismatch Nothing $ "Expected an Int, got " ++ show t)
   (Result _, Result _) ->
-    Error stack (TypeMismatch $ "Expected two Ints")
+    Error stack (TypeMismatch Nothing $ "Expected two Ints")
   (Error stack' err, _) ->
     Error stack' err -- TODO Combine multiple possible errors.
   (_, Error stack' err) ->
@@ -193,6 +201,7 @@ gatherUnsets' rs e = case e of
   Int x -> Right []
   AssertInt _ e1 -> gatherUnsets' rs e1
   String x -> Right []
+  Annotation e1 _ -> gatherUnsets' rs e1
   List [] -> Right []
   List (e : es) -> case gatherUnsets' rs e of
     Right x -> case gatherUnsets' rs (List es) of
@@ -217,7 +226,15 @@ check e a@(GreaterThan y) _x = case _x of
         | otherwise -> case e of
     Name name -> Just (AssertionIntError (Just name) a)
     _ -> Just (AssertionIntError Nothing a)
-  _ -> Just (TypeMismatch ("Expected an Int, got " ++ show _x))
+  _ -> Just (TypeMismatch Nothing ("Expected an Int, got " ++ show _x))
+
+-- | `checkType` works similarly to `check`.
+checkType :: Exp -> Type -> Exp -> Maybe EvaluationError
+checkType e a@TInt _x = case _x of
+  Int x -> Nothing
+  _ -> case e of
+    Name name -> Just (TypeMismatch (Just name) ("Expected an Int, got " ++ show _x))
+    _ -> Just (TypeMismatch Nothing ("Expected an Int, got " ++ show _x))
 
 
 --------------------------------------------------------------------------------
@@ -227,6 +244,7 @@ check e a@(GreaterThan y) _x = case _x of
 -- TODO Raise an error when a user input is given for fixed rule (i.e. not an
 -- Unset).
 validate = undefined
+
 
 --------------------------------------------------------------------------------
 -- A computation, could also be called a form, is a list of rules with a main
@@ -257,6 +275,10 @@ data Exp =
   | Int Int | AssertInt AssertionInt Exp
   | String String
 
+  -- Type-checking is currently done during evaluation, instead as a real
+  -- type-checking phase. I.e. this acts like a dynamically-typed language.
+  | Annotation Exp Type
+
   | List [Exp]
   | Object [(String, Exp)] -- TODO Use a Map.
 
@@ -275,13 +297,18 @@ data Exp =
 data AssertionInt = GreaterThan Int
   deriving (Eq, Show)
 
+data Type = TInt
+  deriving (Eq, Show)
+
 data EvaluationError =
     NoSuchRule String
   | MultipleRules String
   | Cycles
-  | TypeMismatch String
+  | TypeMismatch (Maybe String) String
+    -- ^ When the type mismatch is reported by a failed annotation involving
+    -- directly a Name, it is given here.
   | AssertionIntError (Maybe String) AssertionInt
-    -- ^ When the assertion involves directly a Name, it is give here.
+    -- ^ When the assertion involves directly a Name, it is given here.
   deriving (Eq, Show)
 
 data Result = Result Exp | UnsetVariables [String] | Error [String] EvaluationError
@@ -297,5 +324,5 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 data Input = Input String Exp
   deriving Show
 
-isTypeMismatch (Error _ (TypeMismatch _)) = True
+isTypeMismatch (Error _ (TypeMismatch _ _)) = True
 isTypeMismatch _ = False

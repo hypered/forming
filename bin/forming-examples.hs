@@ -21,6 +21,13 @@ main = defaultMain
       , Rule "a" Unset
       ]
   , Computation
+      "annotate-a"
+      "Compute a int user input."
+      "value"
+      [ Rule "value" (Exp (Annotation (Name "a") TInt))
+      , Rule "a" Unset
+      ]
+  , Computation
       "add"
       "Compute the addition of two integers a and b."
       "value"

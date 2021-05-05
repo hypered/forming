@@ -42,6 +42,9 @@ tests =
   , evaluate [] "l" rules [Input "i" (Bool False)] == UnsetVariables ["e"]
   , evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
   , evaluate [] "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
+  , isTypeMismatch $
+    evaluate [] "r" [Rule "r" (Exp (Annotation (String "a") TInt))] []
+  , evaluate [] "r" [Rule "r" (Exp (Annotation (Int 4) TInt))] [] == Result (Int 4)
   ] 
 
 --------------------------------------------------------------------------------
