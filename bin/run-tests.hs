@@ -43,8 +43,26 @@ tests =
   , evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
   , evaluate [] "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
   , isTypeMismatch $
-    evaluate [] "r" [Rule "r" (Exp (Annotation (String "a") TInt))] []
-  , evaluate [] "r" [Rule "r" (Exp (Annotation (Int 4) TInt))] [] == Result (Int 4)
+    evaluate [] "r" [Rule "r" (Exp (Annotation (String "a") TBool))] []
+  , isTypeMismatch $
+    evaluate [] "r" [Rule "r" (Exp (Annotation (Int 4) TBool))] []
+  , evaluate [] "r" [Rule "r" (Exp (Annotation (Bool True) TBool))] []
+      == Result (Bool True)
+  , isTypeMismatch $
+    evaluate [] "s" [Rule "s" (Exp (Annotation (String "a") TInt))] []
+  , isTypeMismatch $
+    evaluate [] "s" [Rule "s" (Exp (Annotation (Bool True) TInt))] []
+  , evaluate [] "s" [Rule "s" (Exp (Annotation (Int 4) TInt))] [] == Result (Int 4)
+  , isTypeMismatch $
+    evaluate [] "t" [Rule "t" (Exp (Annotation (Int 4) TString))] []
+  , isTypeMismatch $
+    evaluate [] "t" [Rule "t" (Exp (Annotation (Bool True) TString))] []
+  , evaluate [] "t" [Rule "t" (Exp (Annotation (String "a") TString))] []
+      == Result (String "a")
+  , isTypeMismatch $
+    evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["b", "c"])))] []
+  , evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["a", "b"])))] []
+      == Result (String "a")
   ] 
 
 --------------------------------------------------------------------------------

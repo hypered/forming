@@ -10,7 +10,7 @@ import Data.ByteString.Lazy.Char8 (pack)
 import qualified Data.HashMap.Strict as H (toList)
 import Data.Aeson (decode, Value)
 import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
-import Data.List (nub, nubBy)
+import Data.List (intersperse, nub, nubBy)
 import Data.Scientific (floatingOrInteger)
 import qualified Data.Text as T
 import System.Exit (exitFailure)
@@ -242,7 +242,10 @@ check e a@(GreaterThan y) _x = case _x of
 -- | `checkType` works similarly to `check`.
 checkType :: Exp -> Type -> Exp -> Maybe EvaluationError
 checkType e a _x = case (_x, a) of
+  (Bool x, TBool) -> Nothing
   (Int x, TInt) -> Nothing
+  (String x, TString) -> Nothing
+  (String x, TEnum xs) | x `elem` xs -> Nothing
   _ -> case e of
     Name name -> Just (TypeMismatch (Just name)
       ("Expected an " ++ t ++ ", got " ++ show _x))
@@ -251,6 +254,8 @@ checkType e a _x = case (_x, a) of
   t = case a of
     TBool -> "Bool"
     TInt -> "Int"
+    TString -> "String"
+    TEnum xs -> concat $ intersperse "|" xs
 
 
 --------------------------------------------------------------------------------
@@ -313,7 +318,7 @@ data Exp =
 data AssertionInt = GreaterThan Int
   deriving (Eq, Show)
 
-data Type = TBool | TInt
+data Type = TBool | TInt | TString | TEnum [String]
   deriving (Eq, Show)
 
 data EvaluationError =

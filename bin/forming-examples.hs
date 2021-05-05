@@ -28,6 +28,13 @@ main = defaultMain
       , Rule "a" Unset
       ]
   , Computation
+      "annotate-enum"
+      "Compute a user input in hello or bye."
+      "value"
+      [ Rule "value" (Exp (Annotation (Name "a") (TEnum ["hello", "bye"])))
+      , Rule "a" Unset
+      ]
+  , Computation
       "add"
       "Compute the addition of two integers a and b."
       "value"
