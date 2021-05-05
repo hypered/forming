@@ -86,7 +86,7 @@ run c@Computation{..} args = do
     ["--unset"] -> mapM_ print (filter isUnset cRules)
 
     -- List unset names involved in a specific rule.
-    ["--unset", name] -> print (gatherUnsets name cRules)
+    ["--unset", name] -> print (gatherUnsets Nothing name cRules)
 
     -- Parse inputs given as JSON and evaluate one rule.
     ["--json", s] -> runWithInputs c $ makeInputsFromJson s

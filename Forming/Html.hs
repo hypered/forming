@@ -15,7 +15,7 @@ import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
 
 import Hypered.Html (navigationReesd)
 
-import Forming.Core (gatherUnsets, Computation(..), Rule(..))
+import Forming.Core (gatherUnsets, Computation(..), Rule(..), Type(..))
 
 
 ------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ pageComputationDoc namespace c@Computation{..} = do
   H.div $ do
     "Inputs: "
   H.code . H.pre $
-    case gatherUnsets cMain cRules of
+    case gatherUnsets Nothing cMain cRules of
       Left err -> error (show err)
       Right rules -> mapM_ (H.toHtml . (++ "\n") . show) rules
   H.div $ do
@@ -63,7 +63,7 @@ htmlComputation Computation{..} = do
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName
-      case gatherUnsets cMain cRules of
+      case gatherUnsets Nothing cMain cRules of
         Left err -> error (show err)
         Right rules -> mapM_ htmlInput rules
     H.div ! A.class_ "flex justify-between" $ do
@@ -71,7 +71,8 @@ htmlComputation Computation{..} = do
           $ ""
       H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit →"
 
-htmlInput Rule{..} = do
+htmlInput :: (Rule, Maybe Type) -> Html
+htmlInput (Rule{..}, _) = do
   let iden = H.toValue rName -- TODO rules can have spaces or quotes
   H.div ! A.class_ "mv3" $
     H.div ! A.class_ "mb3" $ do

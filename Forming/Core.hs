@@ -187,36 +187,44 @@ lookupInput name is = lookup name is'
 
 -- TODO There is no sharing, so multiple occurence of same name is computed
 -- multiple times.
-gatherUnsets :: String -> [Rule] -> Either EvaluationError [Rule]
-gatherUnsets name rs = case filter ((== name) . rName) rs of
+-- In addition of reporting unset variables, this reports its type when it is
+-- trivial to do (e.g. there is a direct annotation of that variable).
+gatherUnsets :: Maybe Type -> String -> [Rule]
+  -> Either EvaluationError [(Rule, Maybe Type)]
+gatherUnsets mtype name rs = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
-    Unset -> Right [r]
-    Exp e -> gatherUnsets' rs e
+    Unset -> Right [(r, mtype)]
+    Exp e -> gatherUnsets' mtype rs e
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
 
-gatherUnsets' :: [Rule] -> Exp -> Either EvaluationError [Rule]
-gatherUnsets' rs e = case e of
+gatherUnsets' :: Maybe Type -> [Rule] -> Exp -> Either EvaluationError [(Rule, Maybe Type)]
+gatherUnsets' mtype rs e = case e of
   Bool x -> Right []
   Int x -> Right []
-  AssertInt e1 _ -> gatherUnsets' rs e1
+  AssertInt e1 _ -> gatherUnsets' (Just TInt) rs e1
   String x -> Right []
-  Annotation e1 _ -> gatherUnsets' rs e1
+  Annotation e1 t -> gatherUnsets' (Just t) rs e1
   List [] -> Right []
-  List (e : es) -> case gatherUnsets' rs e of
-    Right x -> case gatherUnsets' rs (List es) of
-      Right xs -> Right (nubBy (\a b -> rName a == rName b) (x ++ xs))
+  List (e : es) -> case gatherUnsets' mtype rs e of
+    Right x -> case gatherUnsets' mtype rs (List es) of
+      Right xs -> Right (nubBy (\a b -> rName (fst a) == rName (fst b)) (x ++ xs))
       Left err -> Left err
     Left err -> Left err
-  Object kvs -> gatherUnsets' rs (List (map snd kvs))
-  Name name -> gatherUnsets name rs
-  Names names -> gatherUnsets' rs (List (map Name names))
-  Cond e1 e2 e3 -> gatherUnsets' rs (List [e1, e2, e3])
-  Add e1 e2 -> gatherUnsets' rs (List [e1, e2])
-  Sub e1 e2 -> gatherUnsets' rs (List [e1, e2])
-  Mul e1 e2 -> gatherUnsets' rs (List [e1, e2])
-  Div e1 e2 -> gatherUnsets' rs (List [e1, e2])
-  Sum es -> gatherUnsets' rs (List es)
+  Object kvs -> gatherUnsets' mtype rs (List (map snd kvs))
+  Name name -> gatherUnsets mtype name rs
+  Names names -> gatherUnsets' mtype rs (List (map Name names))
+  -- TODO I could propagate a type here (Bool for the condition), but then also
+  -- than the type of e2 should match the type of e3, and then it looks like a
+  -- real inference algorithm...
+  Cond e1 e2 e3 -> gatherUnsets' mtype rs (List [e1, e2, e3])
+  -- We can propage a TInt here, but this won't be true when we support, say,
+  -- Double.
+  Add e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Sub e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Mul e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Div e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Sum es -> gatherUnsets' (Just TInt) rs (List es)
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
