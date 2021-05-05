@@ -214,10 +214,11 @@ gatherUnsets' mtype rs e = case e of
   Object kvs -> gatherUnsets' mtype rs (List (map snd kvs))
   Name name -> gatherUnsets mtype name rs
   Names names -> gatherUnsets' mtype rs (List (map Name names))
-  -- TODO I could propagate a type here (Bool for the condition), but then also
-  -- than the type of e2 should match the type of e3, and then it looks like a
-  -- real inference algorithm...
-  Cond e1 e2 e3 -> gatherUnsets' mtype rs (List [e1, e2, e3])
+  Cond e1 e2 e3 -> gatherUnsets' mtype rs (List
+    [ Annotation e1 TBool
+    , maybe e2 (Annotation e2) mtype
+    , maybe e3 (Annotation e3) mtype
+    ])
   -- We can propage a TInt here, but this won't be true when we support, say,
   -- Double.
   Add e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
@@ -238,11 +239,16 @@ check e a@(GreaterThan y) _x = case _x of
 
 -- | `checkType` works similarly to `check`.
 checkType :: Exp -> Type -> Exp -> Maybe EvaluationError
-checkType e a@TInt _x = case _x of
-  Int x -> Nothing
+checkType e a _x = case (_x, a) of
+  (Int x, TInt) -> Nothing
   _ -> case e of
-    Name name -> Just (TypeMismatch (Just name) ("Expected an Int, got " ++ show _x))
-    _ -> Just (TypeMismatch Nothing ("Expected an Int, got " ++ show _x))
+    Name name -> Just (TypeMismatch (Just name)
+      ("Expected an " ++ t ++ ", got " ++ show _x))
+    _ -> Just (TypeMismatch Nothing ("Expected an " ++ t ++ ", got " ++ show _x))
+  where
+  t = case a of
+    TBool -> "Bool"
+    TInt -> "Int"
 
 
 --------------------------------------------------------------------------------
@@ -305,7 +311,7 @@ data Exp =
 data AssertionInt = GreaterThan Int
   deriving (Eq, Show)
 
-data Type = TInt
+data Type = TBool | TInt
   deriving (Eq, Show)
 
 data EvaluationError =
