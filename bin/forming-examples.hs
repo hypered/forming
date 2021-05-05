@@ -39,7 +39,7 @@ main = defaultMain
       "greater-than-10"
       "A form to obtain an integer greater than 10."
       "value"
-      [ Rule "value" (Exp (AssertInt (GreaterThan 10) (Name "a")))
+      [ Rule "value" (Exp (AssertInt (Name "a") (GreaterThan 10)))
       , Rule "a" Unset
       ]
   , Computation
@@ -47,7 +47,7 @@ main = defaultMain
       "Compute the addition of two integers a and b. The result must be greater\n\
       \than 10."
       "value"
-      [ Rule "value" (Exp (AssertInt (GreaterThan 10) (Add (Name "a") (Name "b"))))
+      [ Rule "value" (Exp (AssertInt (Add (Name "a") (Name "b")) (GreaterThan 10)))
       , Rule "a" Unset
       , Rule "b" Unset
       ]

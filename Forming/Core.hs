@@ -117,7 +117,7 @@ evaluate stack name rs is = case filter ((== name) . rName) rs of
 reduce stack e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
-  AssertInt assertion e -> case reduce stack e rs is of
+  AssertInt e assertion -> case reduce stack e rs is of
     Result x -> case check e assertion x of
       Nothing -> Result x
       Just err -> Error stack err
@@ -199,7 +199,7 @@ gatherUnsets' :: [Rule] -> Exp -> Either EvaluationError [Rule]
 gatherUnsets' rs e = case e of
   Bool x -> Right []
   Int x -> Right []
-  AssertInt _ e1 -> gatherUnsets' rs e1
+  AssertInt e1 _ -> gatherUnsets' rs e1
   String x -> Right []
   Annotation e1 _ -> gatherUnsets' rs e1
   List [] -> Right []
@@ -272,7 +272,7 @@ data Exp =
     Bool Bool
     -- Is it really useful to have assertions on whole Exp, instead of Unset
     -- values ?
-  | Int Int | AssertInt AssertionInt Exp
+  | Int Int | AssertInt Exp AssertionInt
   | String String
 
   -- Type-checking is currently done during evaluation, instead as a real

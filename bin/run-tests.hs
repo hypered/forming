@@ -93,6 +93,6 @@ rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
 
 rule_16 = Rule "q" (Exp (String "a"))
 
-rule_17 = Rule "r" (Exp (AssertInt (GreaterThan 1) (Name "e")))
+rule_17 = Rule "r" (Exp (AssertInt (Name "e") (GreaterThan 1)))
 
 rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
