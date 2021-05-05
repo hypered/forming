@@ -164,13 +164,15 @@ reduce stack e rs is = case e of
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
 
 binop stack rs is f e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
-  (Result (Int a), Result (Int b)) -> Result (Int (f a b))
-  (Result (Int _), Result t) ->
-    Error stack (TypeMismatch Nothing $ "Expected an Int, got " ++ show t)
-  (Result t, Result (Int _)) ->
-    Error stack (TypeMismatch Nothing $ "Expected an Int, got " ++ show t)
-  (Result _, Result _) ->
-    Error stack (TypeMismatch Nothing $ "Expected two Ints")
+  (Result a, Result b) ->
+    case checkType e1 TInt a of
+      Nothing -> case checkType e2 TInt b of
+        Nothing -> -- We know that a and b are Ints
+          case (a, b) of
+            (Int a_, Int b_) -> Result (Int (f a_ b_))
+            (_, _) -> error "checkType has a bug"
+        Just err -> Error stack err
+      Just err -> Error stack err
   (Error stack' err, _) ->
     Error stack' err -- TODO Combine multiple possible errors.
   (_, Error stack' err) ->
