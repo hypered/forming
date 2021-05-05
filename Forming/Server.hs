@@ -172,6 +172,9 @@ htmlComputationItem Computation{..} =
     H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
     H.preEscapedToHtml (" &mdash; " :: String)
     H.toHtml cName
+    H.toHtml (" " :: String)
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+
 
 ----------------------------------------------------------------------
 formPage :: Computation -> Handler App App ()
