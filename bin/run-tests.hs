@@ -6,6 +6,8 @@ module Main where
 import System.Environment (getArgs)
 
 import Forming
+import Forming.Syntax
+import Forming.Type
 
 
 --------------------------------------------------------------------------------

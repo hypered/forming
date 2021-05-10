@@ -1,6 +1,8 @@
 module Main where
 
 import Forming
+import Forming.Syntax
+import Forming.Type
 
 
 --------------------------------------------------------------------------------

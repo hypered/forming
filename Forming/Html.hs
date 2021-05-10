@@ -16,7 +16,8 @@ import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
 
 import Hypered.Html (navigationReesd)
 
-import Forming.Core (gatherUnsets, Computation(..), Rule(..), Type(..))
+import Forming.Core (gatherUnsets, Computation(..), Rule(..))
+import Forming.Type (Type(..))
 
 
 ------------------------------------------------------------------------------

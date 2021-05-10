@@ -44,6 +44,7 @@ import Hypered.Html
 
 import Forming.Core
 import Forming.Html
+import Forming.Syntax (Syntax(..))
 
 
 ------------------------------------------------------------------------------
