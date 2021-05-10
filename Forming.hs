@@ -31,6 +31,7 @@ import Forming.Server (runServer)
 
 
 --------------------------------------------------------------------------------
+defaultMain :: [Computation] -> IO ()
 defaultMain cs = do
   args <- getArgs
 
@@ -53,12 +54,14 @@ defaultMain cs = do
       putStrLn "Run with --help to see the available computations."
       exitFailure
 
+defaultMainOne :: Computation -> IO ()
 defaultMainOne c = do
   args <- getArgs
   run c args
 
 
 --------------------------------------------------------------------------------
+run :: Computation -> [String] -> IO ()
 run c@Computation{..} args = do
 
   case args of
