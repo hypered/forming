@@ -355,7 +355,6 @@ data Computation = Computation
   , cRules :: [Rule]
   }
 
-
 -- A rule is a binding of a name to a formula, which can be reduced (evaluated)
 -- to a value. Names can be multiple words, e.g. "meal unit price".
 data Rule = Rule
@@ -381,9 +380,6 @@ data EvaluationError =
   deriving (Eq, Show)
 
 data Result = Result Syntax | UnsetVariables [String] | Error [String] EvaluationError
-  deriving (Eq, Show)
-
-data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
   deriving (Eq, Show)
 
 -- | An input is like the simplest rule: it binds a value to a name.
