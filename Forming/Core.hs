@@ -53,6 +53,11 @@ printError stack err = case err of
       maybe "" (\name -> "\"" ++ name ++ "\" must be ") mname
       ++ show err
     putStrLn $ "while evaluating rules " ++ show stack
+  AssertionError mname -> do
+    putStrLn $ "an assertion has failed: " ++
+      maybe "" (\name -> "\"" ++ name ++ "\" ") mname
+      ++ "must be True"
+    putStrLn $ "while evaluating rules " ++ show stack
 
 printValue indent v = case v of
   Int x -> putStrLn (padding ++ show x)
@@ -127,6 +132,12 @@ reduce stack e rs is = case e of
   Annotation e t -> case reduce stack e rs is of
     Result x -> case checkType e t x of
       Nothing -> Result x
+      Just err -> Error stack err
+    Error stack' err -> Error stack' err
+    UnsetVariables xs -> UnsetVariables xs
+  Assert e assertion -> case reduce stack assertion rs is of
+    Result x -> case bcheck assertion x of
+      Nothing -> reduce stack e rs is
       Just err -> Error stack err
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
@@ -225,6 +236,10 @@ gatherUnsets' mtype rs e = case e of
   AssertInt e1 _ -> gatherUnsets' (Just TInt) rs e1
   String x -> Right []
   Annotation e1 t -> gatherUnsets' (Just t) rs e1
+  Assert e1 e2 -> gatherUnsets' mtype rs (List
+    [ maybe e1 (Annotation e1) mtype
+    , Annotation e2 TBool
+    ])
   List [] -> Right []
   List (e : es) -> case gatherUnsets' mtype rs e of
     Right x -> case gatherUnsets' mtype rs (List es) of
@@ -257,6 +272,16 @@ check e a@(GreaterThan y) _x = case _x of
     Name name -> Just (AssertionIntError (Just name) a)
     _ -> Just (AssertionIntError Nothing a)
   _ -> Just (TypeMismatch Nothing ("Expected an Int, got " ++ show _x))
+
+-- | Giving the unevaluated expression is used in the special case it is a
+-- Name, to provide a better error message.
+bcheck :: Exp -> Exp -> Maybe EvaluationError
+bcheck e _x = case _x of
+  Bool True -> Nothing
+  Bool False -> case e of
+    Name name -> Just (AssertionError (Just name))
+    _ -> Just (AssertionError Nothing)
+  _ -> Just (TypeMismatch Nothing ("Expected a Bool, got " ++ show _x))
 
 -- | `checkType` works similarly to `check`.
 checkType :: Exp -> Type -> Exp -> Maybe EvaluationError
@@ -318,6 +343,7 @@ data Exp =
   -- Type-checking is currently done during evaluation, instead as a real
   -- type-checking phase. I.e. this acts like a dynamically-typed language.
   | Annotation Exp Type
+  | Assert Exp Exp -- ^ Returns the first exp, provided the second is True.
 
   | List [Exp]
   | Object [(String, Exp)] -- TODO Use a Map.
@@ -350,6 +376,8 @@ data EvaluationError =
     -- ^ When the type mismatch is reported by a failed annotation involving
     -- directly a Name, it is given here.
   | AssertionIntError (Maybe String) AssertionInt
+    -- ^ When the assertion involves directly a Name, it is given here.
+  | AssertionError (Maybe String)
     -- ^ When the assertion involves directly a Name, it is given here.
   deriving (Eq, Show)
 

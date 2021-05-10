@@ -58,6 +58,19 @@ main = defaultMain
       , Rule "a" Unset
       , Rule "b" Unset
       ]
+  -- Similar to add-greater-than-10, but using a more generic Assert mechanism,
+  -- instead of the more specific AssertInt (which can be removed, although it
+  -- provides better error messages for now).
+  , Computation
+      "assert-greater-than-10"
+      "Compute the addition of two integers a and b. The result must be greater\n\
+      \than 10."
+      "value"
+      [ Rule "value" (Exp (Assert (Name "c") (LessThan (Int 10) (Name "c"))))
+      , Rule "a" Unset
+      , Rule "b" Unset
+      , Rule "c" (Exp (Add (Name "a") (Name "b")))
+      ]
   , Computation
       "has-a-cat"
       "A form to obtain a cat's name, if there is a cat."
