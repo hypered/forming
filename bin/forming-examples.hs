@@ -83,4 +83,37 @@ main = defaultMain
           (Cond (Name "has a cat") (Names ["a cat's name"]) (Names []))
         ))
       ]
+  , Computation
+      "compensation"
+      "A form to compute a net salary given a gross salary."
+      "form"
+      [ Rule "status" Unset
+      , Rule "regime" Unset
+      , Rule "working hours" Unset
+      , Rule "reference hours" Unset
+      , Rule "marital status" Unset
+      , Rule "disability" Unset
+      , Rule "dependant children" Unset
+      , Rule "disabled children" Unset
+      , Rule "gross salary" Unset
+      , Rule "form" (Exp (Union
+        (Object
+          [ ("status", Annotation (Name "status")
+              (TEnum ["blue-collar", "white-collar"]))
+          , ("regime", Annotation (Name "regime")
+              (TEnum ["full-time", "incomplete-full-time", "part-time"]))
+          , ("marital status", Annotation (Name "marital status")
+              (TEnum ["single", "married-1-income", "married-2-income"]))
+          , ("disability", Annotation (Name "disability") TBool)
+          , ("dependant children", Annotation (Name "dependant children") TInt)
+          , ("disabled children", Annotation (Name "disabled children") TInt)
+          , ("gross salary", Annotation (Name "gross salary") TInt)
+          ])
+        (Cond
+           -- TODO Add Or "incomplete-full-time"
+           (Equal (Name "regime") (String "part-time"))
+           (Names ["working hours", "reference hours"])
+           (Names []))
+        ))
+      ]
   ]
