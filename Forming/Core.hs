@@ -156,21 +156,39 @@ reduce stack e rs is = case e of
     (Result t) -> Error stack (TypeMismatch Nothing $ "Expected a Bool, got " ++ show t)
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Add e1 e2 -> binop stack rs is (+) e1 e2
-  Sub e1 e2 -> binop stack rs is (-) e1 e2
-  Mul e1 e2 -> binop stack rs is (*) e1 e2
-  Div e1 e2 -> binop stack rs is div e1 e2
+  Add e1 e2 -> ibinop (+) stack rs is e1 e2
+  Sub e1 e2 -> ibinop (-) stack rs is e1 e2
+  Mul e1 e2 -> ibinop (*) stack rs is e1 e2
+  Div e1 e2 -> ibinop div stack rs is e1 e2
   Sum [] -> Result (Int 0)
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
 
-binop stack rs is f e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
+  LessThan e1 e2 -> ibbinop (<) stack rs is e1 e2
+
+bbinop = binop TBool . op
+  where op f a b = case (a, b) of
+          (Bool a_, Bool b_) -> Bool (f a_ b_)
+          (_, _) -> error "bbinop called with wrong types"
+          -- It may mean that checkType has a bug.
+
+ibinop = binop TInt . op
+  where op f a b = case (a, b) of
+          (Int a_, Int b_) -> Int (f a_ b_)
+          (_, _) -> error "ibinop called with wrong types"
+          -- It may mean that checkType has a bug.
+
+ibbinop = binop TInt . op
+  where op f a b = case (a, b) of
+          (Int a_, Int b_) -> Bool (f a_ b_)
+          (_, _) -> error "ibinop called with wrong types"
+          -- It may mean that checkType has a bug.
+
+binop t f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
   (Result a, Result b) ->
-    case checkType e1 TInt a of
-      Nothing -> case checkType e2 TInt b of
-        Nothing -> -- We know that a and b are Ints
-          case (a, b) of
-            (Int a_, Int b_) -> Result (Int (f a_ b_))
-            (_, _) -> error "checkType has a bug"
+    case checkType e1 t a of
+      Nothing -> case checkType e2 t b of
+        Nothing -> -- We know that a and b are both t, unless checkType is bugged.
+          Result (f a b)
         Just err -> Error stack err
       Just err -> Error stack err
   (Error stack' err, _) ->
@@ -228,6 +246,7 @@ gatherUnsets' mtype rs e = case e of
   Mul e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
   Div e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
   Sum es -> gatherUnsets' (Just TInt) rs (List es)
+  LessThan e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
@@ -313,6 +332,8 @@ data Exp =
   | Mul Exp Exp
   | Div Exp Exp
   | Sum [Exp]
+
+  | LessThan Exp Exp
   deriving (Eq, Show)
 
 data AssertionInt = GreaterThan Int

@@ -34,6 +34,10 @@ tests =
   , evaluate [] "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
   , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
   , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))] []
+  , evaluate [] "k" [Rule "k" (Exp $ LessThan (Int 1) (Int 2))] []
+      == Result (Bool True)
+  , evaluate [] "k" [Rule "k" (Exp $ LessThan (Int 2) (Int 2))] []
+      == Result (Bool False)
   , evaluate [] "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))] []
       == Result (Int 1)
   , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))] []
