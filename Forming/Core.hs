@@ -254,7 +254,7 @@ gatherUnsets mtype name rs = case filter ((== name) . rName) rs of
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
 
-gatherUnsets' :: Maybe Type -> [Rule] -> Exp -> Either EvaluationError [(Rule, Maybe Type)]
+gatherUnsets' :: Maybe Type -> [Rule] -> Syntax -> Either EvaluationError [(Rule, Maybe Type)]
 gatherUnsets' mtype rs e = case e of
   Bool x -> Right []
   Int x -> Right []
@@ -294,7 +294,7 @@ gatherUnsets' mtype rs e = case e of
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
-check :: Exp -> AssertionInt -> Exp -> Maybe EvaluationError
+check :: Syntax -> AssertionInt -> Syntax -> Maybe EvaluationError
 check e a@(GreaterThan y) _x = case _x of
   Int x | x > y -> Nothing
         | otherwise -> case e of
@@ -304,7 +304,7 @@ check e a@(GreaterThan y) _x = case _x of
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
-bcheck :: Exp -> Exp -> Maybe EvaluationError
+bcheck :: Syntax -> Syntax -> Maybe EvaluationError
 bcheck e _x = case _x of
   Bool True -> Nothing
   Bool False -> case e of
@@ -313,7 +313,7 @@ bcheck e _x = case _x of
   _ -> Just (TypeMismatch Nothing ("Expected a Bool, got " ++ show _x))
 
 -- | `checkType` works similarly to `check`.
-checkType :: Exp -> Type -> Exp -> Maybe EvaluationError
+checkType :: Syntax -> Type -> Syntax -> Maybe EvaluationError
 checkType e a _x = case (_x, a) of
   (Bool x, TBool) -> Nothing
   (Int x, TInt) -> Nothing
@@ -361,39 +361,39 @@ data Rule = Rule
   }
   deriving (Eq, Show)
 
-data Formula = Unset | Exp Exp
+data Formula = Unset | Exp Syntax
   deriving (Eq, Show)
 
-data Exp =
+data Syntax =
     Bool Bool
-    -- Is it really useful to have assertions on whole Exp, instead of Unset
+    -- Is it really useful to have assertions on whole Syntax, instead of Unset
     -- values ?
-  | Int Int | AssertInt Exp AssertionInt
+  | Int Int | AssertInt Syntax AssertionInt
   | String String
 
   -- Type-checking is currently done during evaluation, instead as a real
   -- type-checking phase. I.e. this acts like a dynamically-typed language.
-  | Annotation Exp Type
-  | Assert Exp Exp -- ^ Returns the first exp, provided the second is True.
+  | Annotation Syntax Type
+  | Assert Syntax Syntax -- ^ Returns the first exp, provided the second is True.
 
-  | List [Exp]
-  | Object [(String, Exp)] -- TODO Use a Map.
+  | List [Syntax]
+  | Object [(String, Syntax)] -- TODO Use a Map.
 
   | Name String
   | Names [String] -- ^ I think this is similar to Nix's `inherit`.
 
-  | Cond Exp Exp Exp -- if _ then _ else _
+  | Cond Syntax Syntax Syntax -- if _ then _ else _
 
-  | Add Exp Exp
-  | Sub Exp Exp
-  | Mul Exp Exp
-  | Div Exp Exp
-  | Sum [Exp]
+  | Add Syntax Syntax
+  | Sub Syntax Syntax
+  | Mul Syntax Syntax
+  | Div Syntax Syntax
+  | Sum [Syntax]
 
-  | LessThan Exp Exp
+  | LessThan Syntax Syntax
 
-  | Equal Exp Exp
-  | Union Exp Exp
+  | Equal Syntax Syntax
+  | Union Syntax Syntax
     -- ^ Creates the right-biased union of two objects (i.e. prefers the values
     -- from the right-hand object, when they exist in both).
   deriving (Eq, Show)
@@ -417,7 +417,7 @@ data EvaluationError =
     -- ^ When the assertion involves directly a Name, it is given here.
   deriving (Eq, Show)
 
-data Result = Result Exp | UnsetVariables [String] | Error [String] EvaluationError
+data Result = Result Syntax | UnsetVariables [String] | Error [String] EvaluationError
   deriving (Eq, Show)
 
 data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
@@ -427,7 +427,7 @@ data RuleError = RuleCannotBeSet String -- ^ Only Unset rules can be Set.
 -- That value is used to replace an unset variable with the same name.
 -- TODO Raise an error if an input is provided for a variable that cannot be set.
 -- TODO Raise an error if an input is provided for non-existing variable.
-data Input = Input String Exp
+data Input = Input String Syntax
   deriving Show
 
 isTypeMismatch (Error _ (TypeMismatch _ _)) = True
