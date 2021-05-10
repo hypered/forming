@@ -78,6 +78,18 @@ tests =
     , Rule "b" (Exp (Int 2))
     ] []
       == Result (Object [("a", Int 1), ("b", Int 2)])
+  , evaluate [] "w" [Rule "w" (Exp (Equal (Int 1) (Int 1)))] [] == Result (Bool True)
+  , evaluate [] "w" [Rule "w" (Exp (Equal (Int 1) (Int 2)))] [] == Result (Bool False)
+  , evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Bool True)))] []
+      == Result (Bool True)
+  , evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Bool False)))] []
+      == Result (Bool False)
+  , evaluate [] "w" [Rule "w" (Exp (Equal (String "a") (String "a")))] []
+      == Result (Bool True)
+  , evaluate [] "w" [Rule "w" (Exp (Equal (String "a") (String "b")))] []
+      == Result (Bool False)
+  , isTypeMismatch $
+     evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Int 1)))] []
   ] 
 
 --------------------------------------------------------------------------------

@@ -177,6 +177,7 @@ reduce stack e rs is = case e of
 
   LessThan e1 e2 -> ibbinop (<) stack rs is e1 e2
 
+  Equal e1 e2 -> equal stack rs is e1 e2
   Union e1 e2 -> union unionRight stack rs is e1 e2
 
 bbinop = binop TBool . op
@@ -203,16 +204,14 @@ union = binop TObject . op
           (_, _) -> error "union called with wrong types"
           -- It may mean that checkType has a bug.
 
+equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
+
 unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
-binop t f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
-  (Result a, Result b) ->
-    case checkType e1 t a of
-      Nothing -> case checkType e2 t b of
-        Nothing -> -- We know that a and b are both t, unless checkType is bugged.
-          Result (f a b)
-        Just err -> Error stack err
-      Just err -> Error stack err
+binop t f stack rs is e1 e2 = binop' (checkingType t f) stack rs is e1 e2
+
+binop' f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
+  (Result a, Result b) -> f stack e1 e2 a b
   (Error stack' err, _) ->
     Error stack' err -- TODO Combine multiple possible errors.
   (_, Error stack' err) ->
@@ -223,6 +222,21 @@ binop t f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is
     UnsetVariables xs
   (_, UnsetVariables ys) ->
     UnsetVariables ys
+
+checkingType t f stack e1 e2 a b =
+  case (checkType e1 t a, checkType e2 t b) of
+    (Nothing, Nothing) ->
+      -- We know that a and b are both t, unless checkType is bugged.
+      Result (f a b)
+    (Just err, _) -> Error stack err
+    (_, Just err) -> Error stack err
+
+checkingEqClass f stack e1 e2 a b =
+  case (a, b) of
+    (Int _, Int _) -> Result (f a b)
+    (Bool _, Bool _) -> Result (f a b)
+    (String _, String _) -> Result (f a b)
+    _ -> Error stack (TypeMismatch Nothing "TODO Better error message")
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -275,6 +289,7 @@ gatherUnsets' mtype rs e = case e of
   Div e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
   Sum es -> gatherUnsets' (Just TInt) rs (List es)
   LessThan e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Equal e1 e2 -> gatherUnsets' Nothing rs (List [e1, e2])
   Union e1 e2 -> gatherUnsets' (Just TObject) rs (List [e1, e2])
 
 -- | Giving the unevaluated expression is used in the special case it is a
@@ -377,6 +392,7 @@ data Exp =
 
   | LessThan Exp Exp
 
+  | Equal Exp Exp
   | Union Exp Exp
     -- ^ Creates the right-biased union of two objects (i.e. prefers the values
     -- from the right-hand object, when they exist in both).
