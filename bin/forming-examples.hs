@@ -77,9 +77,10 @@ main = defaultMain
       "form"
       [ Rule "has a cat" Unset
       , Rule "a cat's name" Unset
-      , Rule "form" (Exp (Cond
-          (Name "has a cat")
-          (Names ["has a cat", "a cat's name"])
-          (Names ["has a cat"])))
+      , Rule "form" (Exp
+        (Union
+          (Names ["has a cat"])
+          (Cond (Name "has a cat") (Names ["a cat's name"]) (Names []))
+        ))
       ]
   ]

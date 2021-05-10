@@ -10,7 +10,8 @@ import Data.ByteString.Lazy.Char8 (pack)
 import qualified Data.HashMap.Strict as H (toList)
 import Data.Aeson (decode, Value)
 import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
-import Data.List (intersperse, nub, nubBy)
+import Data.List (deleteFirstsBy, intersperse, nub, nubBy)
+import Data.Maybe (isNothing)
 import Data.Scientific (floatingOrInteger)
 import qualified Data.Text as T
 import System.Exit (exitFailure)
@@ -176,6 +177,8 @@ reduce stack e rs is = case e of
 
   LessThan e1 e2 -> ibbinop (<) stack rs is e1 e2
 
+  Union e1 e2 -> union unionRight stack rs is e1 e2
+
 bbinop = binop TBool . op
   where op f a b = case (a, b) of
           (Bool a_, Bool b_) -> Bool (f a_ b_)
@@ -193,6 +196,14 @@ ibbinop = binop TInt . op
           (Int a_, Int b_) -> Bool (f a_ b_)
           (_, _) -> error "ibinop called with wrong types"
           -- It may mean that checkType has a bug.
+
+union = binop TObject . op
+  where op f a b = case (a, b) of
+          (Object as, Object bs) -> Object (f as bs)
+          (_, _) -> error "union called with wrong types"
+          -- It may mean that checkType has a bug.
+
+unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
 binop t f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
   (Result a, Result b) ->
@@ -241,9 +252,11 @@ gatherUnsets' mtype rs e = case e of
     , Annotation e2 TBool
     ])
   List [] -> Right []
-  List (e : es) -> case gatherUnsets' mtype rs e of
-    Right x -> case gatherUnsets' mtype rs (List es) of
-      Right xs -> Right (nubBy (\a b -> rName (fst a) == rName (fst b)) (x ++ xs))
+  List (e : es) -> case gatherUnsets' Nothing rs e of
+    Right x -> case gatherUnsets' Nothing rs (List es) of
+      Right xs ->
+        let typedFirsts = filter (not . isNothing . snd) (x ++ xs) ++ x ++ xs
+        in Right (nubBy (\a b -> rName (fst a) == rName (fst b)) typedFirsts)
       Left err -> Left err
     Left err -> Left err
   Object kvs -> gatherUnsets' mtype rs (List (map snd kvs))
@@ -262,6 +275,7 @@ gatherUnsets' mtype rs e = case e of
   Div e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
   Sum es -> gatherUnsets' (Just TInt) rs (List es)
   LessThan e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
+  Union e1 e2 -> gatherUnsets' (Just TObject) rs (List [e1, e2])
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
@@ -290,6 +304,7 @@ checkType e a _x = case (_x, a) of
   (Int x, TInt) -> Nothing
   (String x, TString) -> Nothing
   (String x, TEnum xs) | x `elem` xs -> Nothing
+  (Object _, TObject) -> Nothing
   _ -> case e of
     Name name -> Just (TypeMismatch (Just name)
       ("Expected an " ++ t ++ ", got " ++ show _x))
@@ -300,6 +315,7 @@ checkType e a _x = case (_x, a) of
     TInt -> "Int"
     TString -> "String"
     TEnum xs -> concat $ intersperse "|" xs
+    TObject -> "Object"
 
 
 --------------------------------------------------------------------------------
@@ -360,12 +376,16 @@ data Exp =
   | Sum [Exp]
 
   | LessThan Exp Exp
+
+  | Union Exp Exp
+    -- ^ Creates the right-biased union of two objects (i.e. prefers the values
+    -- from the right-hand object, when they exist in both).
   deriving (Eq, Show)
 
 data AssertionInt = GreaterThan Int
   deriving (Eq, Show)
 
-data Type = TBool | TInt | TString | TEnum [String]
+data Type = TBool | TInt | TString | TEnum [String] | TObject
   deriving (Eq, Show)
 
 data EvaluationError =

@@ -67,6 +67,17 @@ tests =
     evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["b", "c"])))] []
   , evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["a", "b"])))] []
       == Result (String "a")
+  , evaluate [] "v" [Rule "v" (Exp (Union (Object []) (Object [("a", Int 1)])))] []
+      == Result (Object [("a", Int 1)])
+  , evaluate [] "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("a", Int 2)])))] []
+      == Result (Object [("a", Int 2)])
+  , evaluate [] "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("b", Int 2)])))] []
+      == Result (Object [("a", Int 1), ("b", Int 2)])
+  , evaluate [] "v"
+    [ Rule "v" (Exp (Union (Object [("a", Int 1)]) (Names ["b"])))
+    , Rule "b" (Exp (Int 2))
+    ] []
+      == Result (Object [("a", Int 1), ("b", Int 2)])
   ] 
 
 --------------------------------------------------------------------------------

@@ -99,3 +99,4 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.toHtml $
     TInt -> "Int"
     TString -> "String"
     TEnum xs -> concat $ intersperse "|" xs
+    TObject -> "Object"
