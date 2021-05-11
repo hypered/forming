@@ -1,3 +1,11 @@
 { pkgs ? import <nixpkgs> {} }:
 
-(pkgs.haskellPackages.callCabal2nix "forming" ./. { }).env
+let
+  env = (pkgs.haskellPackages.callCabal2nix "forming" ./. { }).env;
+in
+
+  pkgs.lib.overrideDerivation env (old: {
+    buildInputs = old.buildInputs ++ [
+      pkgs.haskellPackages.ghcid
+    ];
+  })
