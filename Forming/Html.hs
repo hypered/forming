@@ -94,7 +94,7 @@ htmlInput (Rule{..}, mtype) = do
               ! A.type_ "text"
               ! A.placeholder ""
 
-htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.toHtml $
+htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
   case t of
     TBool -> "Bool"
     TInt -> "Int"
