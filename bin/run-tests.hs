@@ -1,9 +1,10 @@
--- This is the main development script: it can be loaded in GHCi or run from the
--- command-line to play with the concepts of this library.
-
 module Main where
 
-import System.Environment (getArgs)
+import Test.Tasty (TestTree)
+import Test.Tasty.HUnit (assertBool, (@?=))
+
+import qualified Test.Tasty as Tasty
+import qualified Test.Tasty.HUnit as HUnit
 
 import Forming
 import Forming.Syntax
@@ -11,88 +12,235 @@ import Forming.Type
 
 
 --------------------------------------------------------------------------------
-main = print (all id tests, tests)
+main :: IO ()
+main = do
+  Tasty.defaultMain (Tasty.testGroup "All tests" [baseTree, assortedTree])
 
 
 --------------------------------------------------------------------------------
-tests =
-  [ evaluate [] "a" [] [] == Error ["a"] (NoSuchRule "a")
-  , evaluate [] "a" [Rule "a" (Exp $ Int 5), Rule "a" (Exp $ Int 6)] [] ==
-    Error ["a"] (MultipleRules "a")
-  , evaluate [] "a" [Rule "a" (Exp $ Int 5)] [] == Result (Int 5)
-  , evaluate [] "a" rules [] == Result (Int 5)
-  , evaluate [] "b" rules [] == Result (Int 6)
-  , evaluate [] "c" rules [] == Result (Int 6)
-  , evaluate [] "d" rules [] == Result (Int 6)
-  , evaluate [] "e" rules [] == UnsetVariables ["e"]
-  , evaluate [] "e" rules [Input "e" (Int 4)] == Result (Int 4)
-  , evaluate [] "f" rules [] == UnsetVariables ["e"]
-  , evaluate [] "f" rules [Input "e" (Int 4)] == Result (Int 4)
-  , evaluate [] "g-add" rules [] == Result (Int 11)
-  , evaluate [] "g-sub" rules [] == Result (Int (- 1))
-  , evaluate [] "g-mul" rules [] == Result (Int 30)
-  , evaluate [] "g-div" rules [] == Result (Int 0)
-  , evaluate [] "h" rules [] == Result (Int 17)
-  , evaluate [] "i" [Rule "i" (Exp $ Bool True)] [] == Result (Bool True)
-  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))] []
-  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))] []
-  , evaluate [] "k" [Rule "k" (Exp $ LessThan (Int 1) (Int 2))] []
-      == Result (Bool True)
-  , evaluate [] "k" [Rule "k" (Exp $ LessThan (Int 2) (Int 2))] []
-      == Result (Bool False)
-  , evaluate [] "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))] []
-      == Result (Int 1)
-  , isTypeMismatch $ evaluate [] "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))] []
-  , evaluate [] "l" rules [] == UnsetVariables ["i"]
-  , evaluate [] "l" rules [Input "i" (Bool True)] == Result (Int 5)
-  , evaluate [] "l" rules [Input "i" (Bool False)] == UnsetVariables ["e"]
-  , evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] == Result (Int 4)
-  , evaluate [] "q" [Rule "q" (Exp $ String "a")] [] == Result (String "a")
-  , isTypeMismatch $
-    evaluate [] "r" [Rule "r" (Exp (Annotation (String "a") TBool))] []
-  , isTypeMismatch $
-    evaluate [] "r" [Rule "r" (Exp (Annotation (Int 4) TBool))] []
-  , evaluate [] "r" [Rule "r" (Exp (Annotation (Bool True) TBool))] []
-      == Result (Bool True)
-  , isTypeMismatch $
-    evaluate [] "s" [Rule "s" (Exp (Annotation (String "a") TInt))] []
-  , isTypeMismatch $
-    evaluate [] "s" [Rule "s" (Exp (Annotation (Bool True) TInt))] []
-  , evaluate [] "s" [Rule "s" (Exp (Annotation (Int 4) TInt))] [] == Result (Int 4)
-  , isTypeMismatch $
-    evaluate [] "t" [Rule "t" (Exp (Annotation (Int 4) TString))] []
-  , isTypeMismatch $
-    evaluate [] "t" [Rule "t" (Exp (Annotation (Bool True) TString))] []
-  , evaluate [] "t" [Rule "t" (Exp (Annotation (String "a") TString))] []
-      == Result (String "a")
-  , isTypeMismatch $
-    evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["b", "c"])))] []
-  , evaluate [] "u" [Rule "u" (Exp (Annotation (String "a") (TEnum ["a", "b"])))] []
-      == Result (String "a")
-  , evaluate [] "v" [Rule "v" (Exp (Union (Object []) (Object [("a", Int 1)])))] []
-      == Result (Object [("a", Int 1)])
-  , evaluate [] "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("a", Int 2)])))] []
-      == Result (Object [("a", Int 2)])
-  , evaluate [] "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("b", Int 2)])))] []
-      == Result (Object [("a", Int 1), ("b", Int 2)])
-  , evaluate [] "v"
-    [ Rule "v" (Exp (Union (Object [("a", Int 1)]) (Names ["b"])))
-    , Rule "b" (Exp (Int 2))
-    ] []
-      == Result (Object [("a", Int 1), ("b", Int 2)])
-  , evaluate [] "w" [Rule "w" (Exp (Equal (Int 1) (Int 1)))] [] == Result (Bool True)
-  , evaluate [] "w" [Rule "w" (Exp (Equal (Int 1) (Int 2)))] [] == Result (Bool False)
-  , evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Bool True)))] []
-      == Result (Bool True)
-  , evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Bool False)))] []
-      == Result (Bool False)
-  , evaluate [] "w" [Rule "w" (Exp (Equal (String "a") (String "a")))] []
-      == Result (Bool True)
-  , evaluate [] "w" [Rule "w" (Exp (Equal (String "a") (String "b")))] []
-      == Result (Bool False)
-  , isTypeMismatch $
-     evaluate [] "w" [Rule "w" (Exp (Equal (Bool True) (Int 1)))] []
-  ] 
+baseTree :: TestTree
+baseTree = Tasty.testGroup "Base tests"
+  [ HUnit.testCase "Error reporting (no such rule - 1)" $
+      eval "a" []
+      @?= Error ["a"] (NoSuchRule "a")
+
+  , HUnit.testCase "Error reporting (no such rule - 2)" $
+      eval "a" [Rule "b" (Exp (Int 5))]
+      @?= Error ["a"] (NoSuchRule "a")
+
+  , HUnit.testCase "Error reporting (multiple rules)" $
+      eval "a" [Rule "a" (Exp (Int 5)), Rule "a" (Exp (Int 6))]
+      @?= Error ["a"] (MultipleRules "a")
+
+  , HUnit.testCase "Error reporting (unset variable)" $
+      eval "a" [Rule "a" Unset]
+      @?= UnsetVariables ["a"]
+
+
+  , HUnit.testCase "a = True" $
+      eval "a" [Rule "a" (Exp (Bool True))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "a = False" $
+      eval "a" [Rule "a" (Exp (Bool False))]
+      @?= Result (Bool False)
+
+  , HUnit.testCase "a = 5" $
+      eval "a" [Rule "a" (Exp (Int 5))]
+      @?= Result (Int 5)
+
+  , HUnit.testCase "a = \"x\"" $
+      eval "a" [Rule "a" (Exp (String "x"))]
+      @?= Result (String "x")
+
+
+  , HUnit.testCase "Annotation Bool - Bool" $
+      eval "a" [Rule "a" (Exp (Annotation (Bool True) TBool))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "Annotation Int - Bool" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Int 4) TBool))]
+
+  , HUnit.testCase "Annotation String - Bool" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (String "x") TBool))]
+
+
+  , HUnit.testCase "Annotation Bool - Int" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Bool True) TInt))]
+
+  , HUnit.testCase "Annotation Int - Int" $
+      eval "a" [Rule "a" (Exp (Annotation (Int 4) TInt))]
+      @?= Result (Int 4)
+
+  , HUnit.testCase "Annotation String - Int" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (String "x") TInt))]
+
+
+  , HUnit.testCase "Annotation Bool - String" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Bool True) TString))]
+
+  , HUnit.testCase "Annotation Int - String" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Int 4) TString))]
+
+  , HUnit.testCase "Annotation String - String" $
+      eval "a" [Rule "a" (Exp (Annotation (String "x") TString))]
+      @?= Result (String "x")
+
+
+  , HUnit.testCase "Annotation Bool - Enum" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Bool True) (TEnum ["x", "y"])))]
+
+  , HUnit.testCase "Annotation Int - Enum" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (Int 4) (TEnum ["x", "y"])))]
+
+  , HUnit.testCase "Annotation String - Enum" $
+      eval "a" [Rule "a" (Exp (Annotation (String "x") (TEnum ["x", "y"])))]
+      @?= Result (String "x")
+
+  , HUnit.testCase "Annotation String - Enum (mismatch)" $
+      assertBool "expected type-mismatch" $ isTypeMismatch $
+        eval "a" [Rule "a" (Exp (Annotation (String "x") (TEnum ["y", "z"])))]
+
+
+  , HUnit.testCase "TODO" $
+      eval "v" [Rule "v" (Exp (Union (Object []) (Object [("a", Int 1)])))]
+      @?= Result (Object [("a", Int 1)])
+
+  , HUnit.testCase "TODO" $
+      eval "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("a", Int 2)])))]
+      @?= Result (Object [("a", Int 2)])
+
+  , HUnit.testCase "TODO" $
+      eval "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("b", Int 2)])))]
+      @?= Result (Object [("a", Int 1), ("b", Int 2)])
+
+  , HUnit.testCase "TODO" $
+      eval "v"
+        [ Rule "v" (Exp (Union (Object [("a", Int 1)]) (Names ["b"])))
+        , Rule "b" (Exp (Int 2))
+        ]
+      @?= Result (Object [("a", Int 1), ("b", Int 2)])
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (Int 1) (Int 1)))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (Int 1) (Int 2)))]
+      @?= Result (Bool False)
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (Bool True) (Bool True)))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (Bool True) (Bool False)))]
+      @?= Result (Bool False)
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (String "a") (String "a")))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "TODO" $
+      eval "w" [Rule "w" (Exp (Equal (String "a") (String "b")))]
+      @?= Result (Bool False)
+
+  , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
+      isTypeMismatch $
+        eval "w" [Rule "w" (Exp (Equal (Bool True) (Int 1)))]
+  ]
+
+assortedTree :: TestTree
+assortedTree = Tasty.testGroup "Assorted tests"
+  [ HUnit.testCase "TODO" $
+      eval "a" rules @?= Result (Int 5)
+
+  , HUnit.testCase "TODO" $
+      eval "b" rules @?= Result (Int 6)
+
+  , HUnit.testCase "TODO" $
+      eval "c" rules @?= Result (Int 6)
+
+  , HUnit.testCase "TODO" $
+      eval "d" rules @?= Result (Int 6)
+
+  , HUnit.testCase "TODO" $
+      eval "e" rules @?= UnsetVariables ["e"]
+
+  , HUnit.testCase "TODO" $
+      evaluate [] "e" rules [Input "e" (Int 4)] @?= Result (Int 4)
+
+  , HUnit.testCase "TODO" $
+      eval "f" rules @?= UnsetVariables ["e"]
+
+  , HUnit.testCase "TODO" $
+      evaluate [] "f" rules [Input "e" (Int 4)] @?= Result (Int 4)
+
+  , HUnit.testCase "TODO" $
+      eval "g-add" rules @?= Result (Int 11)
+
+  , HUnit.testCase "TODO" $
+      eval "g-sub" rules @?= Result (Int (- 1))
+
+  , HUnit.testCase "TODO" $
+      eval "g-mul" rules @?= Result (Int 30)
+
+  , HUnit.testCase "TODO" $
+      eval "g-div" rules @?= Result (Int 0)
+
+  , HUnit.testCase "TODO" $
+      eval "h" rules @?= Result (Int 17)
+
+  , HUnit.testCase "TODO" $
+      eval "i" [Rule "i" (Exp $ Bool True)] @?= Result (Bool True)
+
+  , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
+      isTypeMismatch $
+        eval "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))]
+
+  , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
+      isTypeMismatch $
+        eval "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))]
+
+  , HUnit.testCase "TODO" $
+      eval "k" [Rule "k" (Exp $ LessThan (Int 1) (Int 2))]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "TODO" $
+      eval "k" [Rule "k" (Exp $ LessThan (Int 2) (Int 2))]
+      @?= Result (Bool False)
+
+  , HUnit.testCase "TODO" $
+      eval "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))]
+      @?= Result (Int 1)
+
+  , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
+      isTypeMismatch $
+        eval "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))]
+
+  , HUnit.testCase "TODO" $
+      eval "l" rules @?= UnsetVariables ["i"]
+
+  , HUnit.testCase "TODO" $
+      evaluate [] "l" rules [Input "i" (Bool True)] @?= Result (Int 5)
+
+  , HUnit.testCase "TODO" $
+      evaluate [] "l" rules [Input "i" (Bool False)] @?= UnsetVariables ["e"]
+
+  , HUnit.testCase "TODO" $
+      evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] @?= Result (Int 4)
+  ]
+
+eval name rules = evaluate [] name rules []
+
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
