@@ -1,0 +1,29 @@
+cabal-version:       >=1.10
+name:                forming
+version:             0.0.1
+license-file:        LICENSE
+author:              Vo Minh Thu
+maintainer:          thu@hypered.io
+build-type:          Simple
+
+library
+  build-depends:       aeson
+                     , base
+                     , blaze-html
+                     , containers
+                     , lens
+                     , snap
+                     , snap-core
+                     , snap-server
+  exposed-modules:     Forming
+                     , Forming.Core
+                     , Forming.Syntax
+                     , Forming.Type
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+executable forming-examples
+  main-is:             forming-examples.hs
+  build-depends:       base, forming
+  hs-source-dirs:      bin
+  default-language:    Haskell2010
