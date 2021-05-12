@@ -9,9 +9,7 @@
 # the corresponding .mix file will be missing, causing errors later when
 # invoking `hpc report` or `hpc markup`.
 echo "Building bin/forming-examples..."
-rm -rf .hpc
-find . -name '*.hi' -o -name '*.o' -delete
-find ../design-system/ -name '*.hi' -o -name '*.o' -delete
+./clean.sh
 ghc --make -fhpc -i../design-system/ bin/forming-examples.hs
 
 # With the HPCTIXDIR environment variable set, an HPC-instrumented process
@@ -22,7 +20,6 @@ ghc --make -fhpc -i../design-system/ bin/forming-examples.hs
 # `covered markup`.
 # That directory is automatically created by the instrumented executable.
 export HPCTIXDIR=tix
-rm -rf tix
 
 # Run the code in various ways.
 # TODO I can't run run-tests because it seems it is a different Main and it
@@ -69,7 +66,6 @@ for i in $TIXS ; do
   mv new.tix forming.tix
 done
 
-rm -r coverage
 mkdir -p coverage
 echo "HPC Report:"
 hpc report forming.tix --hpcdir .hpc
