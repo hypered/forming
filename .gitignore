@@ -1,6 +1,10 @@
+.hpc/
 .*.swp
 *.dyn_hi
 *.dyn_o
 *.hi
 *.o
+*.tix
+coverage/
 generated/
+tix/
