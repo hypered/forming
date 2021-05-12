@@ -156,3 +156,4 @@ parseInput' (A.Number x) = case floatingOrInteger x of
   Right  v -> Int v
   Left _ -> error "TODO Support floats"
 parseInput' (A.String x) = String (T.unpack x)
+parseInput' v = error ("TODO Support " ++ show v)
