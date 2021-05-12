@@ -43,6 +43,7 @@ import Hypered.Html
   )
 
 import Forming.Core
+import Forming.IO (parseInput)
 import Forming.Html
 import Forming.Syntax (Syntax(..))
 

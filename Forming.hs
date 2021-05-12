@@ -26,6 +26,7 @@ import Hypered.Html
   , generate')
 
 import Forming.Core
+import Forming.IO
 import Forming.Html (pageComputation)
 import Forming.Server (runServer)
 
