@@ -37,11 +37,13 @@ runWithInputs Computation{..} mis = case mis of
     putStrLn ("ERROR: " ++ err)
     exitFailure
 
+printUnsetVariables :: [String] -> IO ()
 printUnsetVariables names = do
   putStrLn "This computation expects the following user inputs:\n"
   mapM_ (putStrLn . ("  " ++)) names
   putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
 
+printError :: [String] -> EvaluationError -> IO ()
 printError stack err = case err of
   NoSuchRule name -> putStrLn $ "no such rule \"" ++ name ++"\"."
   MultipleRules name -> putStrLn $
@@ -63,6 +65,7 @@ printError stack err = case err of
       ++ "must be True"
     putStrLn $ "while evaluating rules " ++ show stack
 
+printValue :: Int -> Syntax -> IO ()
 printValue indent v = case v of
   Int x -> putStrLn (padding ++ show x)
   Bool x -> putStrLn (padding ++ show x)
@@ -93,6 +96,7 @@ makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Just _ -> Left "input JSON is not an object."
   Nothing -> Left "malformed input JSON."
 
+parseInput :: String -> Syntax
 parseInput val = case val of
   _ | length val > 0 && all (`elem` ("0123456789" :: String)) val ->
     Int $ read val
@@ -105,9 +109,6 @@ parseInput' (A.Number x) = case floatingOrInteger x of
   Right  v -> Int v
   Left _ -> error "TODO Support floats"
 parseInput' (A.String x) = String (T.unpack x)
-
-isUnset (Rule _ Unset) = True
-isUnset _ = False
 
 
 --------------------------------------------------------------------------------
@@ -389,5 +390,10 @@ data Result = Result Syntax | UnsetVariables [String] | Error [String] Evaluatio
 data Input = Input String Syntax
   deriving Show
 
+isUnset :: Rule -> Bool
+isUnset (Rule _ Unset) = True
+isUnset _ = False
+
+isTypeMismatch :: Result -> Bool
 isTypeMismatch (Error _ (TypeMismatch _ _)) = True
 isTypeMismatch _ = False
