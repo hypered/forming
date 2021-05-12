@@ -5,9 +5,10 @@
 
 module Forming.IO where
 
-import Data.Aeson (decode, Value)
+import Data.Aeson (decode, encode, object, Value, (.=))
 import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
 import Data.ByteString.Lazy.Char8 (pack)
+import qualified Data.ByteString.Lazy as LB (putStr)
 import qualified Data.HashMap.Strict as H (toList)
 import Data.Scientific (floatingOrInteger)
 import qualified Data.Text as T
@@ -19,20 +20,26 @@ import Forming.Type
 
 
 --------------------------------------------------------------------------------
-runWithInputs :: Computation -> Either String (Maybe String, [Input]) -> IO ()
-runWithInputs Computation{..} mis = case mis of
-  Right (mname, is) ->
-    case evaluate [] (maybe cMain id mname) cRules is of
-      UnsetVariables names -> do
-        putStrLn "ERROR: missing user inputs."
-        printUnsetVariables names
-        exitFailure
-      Result x -> printValue 0 x
-      Error stack err -> do
-        putStr "ERROR: "
-        printError stack err
-  Left err -> do
-    putStrLn ("ERROR: " ++ err)
+compute :: Computation -> Either String (Maybe String, [Input]) -> Either String Result
+compute Computation{..} mis = case mis of
+  Right (mname, is) -> Right $ evaluate [] (maybe cMain id mname) cRules is
+  Left err -> Left err
+
+
+--------------------------------------------------------------------------------
+printOutput :: Either String Result -> IO ()
+printOutput (Left err) = do
+  putStrLn ("ERROR: " ++ err)
+  exitFailure
+printOutput (Right result) = case result of
+  Result x -> printValue 0 x
+  UnsetVariables names -> do
+    putStrLn "ERROR: missing user inputs."
+    printUnsetVariables names
+    exitFailure
+  Error stack err -> do
+    putStr "ERROR: "
+    printError stack err
     exitFailure
 
 printUnsetVariables :: [String] -> IO ()

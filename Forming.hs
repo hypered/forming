@@ -93,9 +93,9 @@ run c@Computation{..} args = do
     ["--unset", name] -> print (gatherUnsets Nothing name cRules)
 
     -- Parse inputs given as JSON and evaluate one rule.
-    ["--json", s] -> runWithInputs c $ makeInputsFromJson s
-    ["--json", s, name] -> runWithInputs c $
+    ["--json", s] -> printOutput $ compute c $ makeInputsFromJson s
+    ["--json", s, name] -> printOutput $ compute c $
       right (first (const (Just name))) $ makeInputsFromJson s
 
     -- Parse inputs of the form `--set a 1` and evaluate one rule.
-    rest -> runWithInputs c $ makeInputs rest []
+    rest -> printOutput $ compute c $ makeInputs rest []
