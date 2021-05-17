@@ -143,6 +143,20 @@ Source of inspiration could be:
 - Typeform
 
 
+# Decimal
+
+```
+Prelude Data.Decimal> (3500 :: Decimal)
+3500
+Prelude Data.Decimal> (3500.00 :: Decimal)
+3500
+Prelude Data.Decimal> (read "3500.00" :: Decimal)
+3500.00
+Prelude Data.Decimal> Decimal 2 350000
+3500.00
+```
+
+
 # Notes
 
 It seems in Publicodes that a simple rule:
