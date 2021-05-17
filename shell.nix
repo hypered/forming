@@ -7,5 +7,6 @@ in
   pkgs.lib.overrideDerivation env (old: {
     buildInputs = old.buildInputs ++ [
       pkgs.haskellPackages.ghcid
+      pkgs.haskellPackages.hlint
     ];
   })

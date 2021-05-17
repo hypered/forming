@@ -1,0 +1,8 @@
+# HLint configuration file
+#
+# To generate a suitable file for HLint do:
+# $ hlint --default > .hlint.yaml
+
+
+# Warnings currently triggered by your code
+- ignore: {name: "Redundant evaluate"}

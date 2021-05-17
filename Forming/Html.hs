@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Forming.Html where
 
-import Data.List (intersperse)
+import Data.List (intercalate)
 import Data.Text (Text)
 import qualified Data.Text.Lazy.IO as T
 import System.FilePath (joinPath, splitPath, takeDirectory, FilePath, (</>))
@@ -28,8 +28,7 @@ pageComputation c@Computation{..} = do
     H.div ! A.class_ "tc moon-gray pt4" $ "Powered by Reesd"
 
 pageComputationDoc namespace c@Computation{..} = do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.span $ do
     H.a ! A.href (H.toValue $ "/" ++ namespace)
         ! A.class_ "black" $
@@ -99,5 +98,5 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
     TBool -> "Bool"
     TInt -> "Int"
     TString -> "String"
-    TEnum xs -> concat $ intersperse "|" xs
+    TEnum xs -> intercalate "|" xs
     TObject -> "Object"

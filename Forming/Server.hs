@@ -12,6 +12,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (object, Value, (.=))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -128,8 +129,7 @@ aboutPage = serveFile $ _FORMING_SITE_DIR </> "index.html"
 ------------------------------------------------------------------------------
 indexPage :: Handler App App ()
 indexPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.p $ do
     "Reesd is in private alpha. New registrations are currently disabled."
     " You can "
@@ -138,22 +138,19 @@ indexPage = writeLazyText . renderHtml $ document "Reesd" $ do
 
 loginPage :: Handler App App ()
 loginPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.p "Reesd is in private alpha. New registrations are currently disabled."
   loginForm
 
 registerPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.p "Reesd is in private alpha. New registrations are currently disabled."
   registerForm
   -- There could be a footer, but on simple forms, I think I prefer without.
   -- footer "© Hypered, 2020-2021."
 
 resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.p "Enter a verified email address and we'll send a password reset link\
     \ to that address."
   resetForm
@@ -162,8 +159,7 @@ resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
 ----------------------------------------------------------------------
 namespacePage :: String -> [Computation] -> Handler App App ()
 namespacePage namespace cs = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header $
-    navigationReesd
+  H.header navigationReesd
   H.span $ do
     H.code (H.toHtml namespace)
   H.ul $
@@ -191,8 +187,7 @@ submitHandler c = do
   logError "Handling .../+submit..."
   params <- getParams
   writeLazyText . renderHtml $ document "Reesd" $ do
-    H.header $
-      navigationReesd
+    H.header navigationReesd
     H.code . H.toHtml $ cName c
     H.code . H.toHtml $ show params
     runWithInputs' c $ makeInputsFromParams params
@@ -201,7 +196,7 @@ submitHandler c = do
 runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
 runWithInputs' Computation{..} mis = case mis of
   Right (mname, is) ->
-    case evaluate [] (maybe cMain id mname) cRules is of
+    case evaluate [] (fromMaybe cMain mname) cRules is of
       UnsetVariables names -> do
         H.code "ERROR: missing user inputs."
         printUnsetVariables' names

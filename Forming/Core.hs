@@ -1,12 +1,11 @@
 -- This file contains the main code.
 
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Forming.Core where
 
-import Data.List (deleteFirstsBy, intersperse, nub, nubBy)
-import Data.Maybe (isNothing)
+import Data.List (deleteFirstsBy, intercalate, nub, nubBy)
+import Data.Maybe (isJust)
 
 import Forming.Syntax
 import Forming.Type
@@ -113,7 +112,7 @@ equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
 
 unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
-binop t f stack rs is e1 e2 = binop' (checkingType t f) stack rs is e1 e2
+binop t f = binop' (checkingType t f)
 
 binop' f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
   (Result a, Result b) -> f stack e1 e2 a b
@@ -174,7 +173,7 @@ gatherUnsets' mtype rs e = case e of
   List (e : es) -> case gatherUnsets' Nothing rs e of
     Right x -> case gatherUnsets' Nothing rs (List es) of
       Right xs ->
-        let typedFirsts = filter (not . isNothing . snd) (x ++ xs) ++ x ++ xs
+        let typedFirsts = filter (isJust . snd) (x ++ xs) ++ x ++ xs
         in Right (nubBy (\a b -> rName (fst a) == rName (fst b)) typedFirsts)
       Left err -> Left err
     Left err -> Left err
@@ -234,7 +233,7 @@ checkType e a _x = case (_x, a) of
     TBool -> "Bool"
     TInt -> "Int"
     TString -> "String"
-    TEnum xs -> concat $ intersperse "|" xs
+    TEnum xs -> intercalate "|" xs
     TObject -> "Object"
 
 

@@ -11,6 +11,7 @@ import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
 import Data.ByteString.Lazy.Char8 (pack)
 import qualified Data.ByteString.Lazy as LB (putStr)
 import qualified Data.HashMap.Strict as H (toList)
+import Data.Maybe (fromMaybe)
 import Data.Scientific (floatingOrInteger)
 import qualified Data.Text as T
 import System.Exit (exitFailure)
@@ -23,7 +24,7 @@ import Forming.Type
 --------------------------------------------------------------------------------
 compute :: Computation -> Either String (Maybe String, [Input]) -> Either String Result
 compute Computation{..} mis = case mis of
-  Right (mname, is) -> Right $ evaluate [] (maybe cMain id mname) cRules is
+  Right (mname, is) -> Right $ evaluate [] (fromMaybe cMain mname) cRules is
   Left err -> Left err
 
 
@@ -138,14 +139,14 @@ makeInputs rest _ =
 makeInputsFromJson :: String -> Either String (Maybe String, [Input])
 makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Just (A.Object kvs_) ->
-    let kvs = (H.toList kvs_)
+    let kvs = H.toList kvs_
     in Right (Nothing, map (\(k, v) -> Input (T.unpack k) (parseInput' v)) kvs)
   Just _ -> Left "input JSON is not an object."
   Nothing -> Left "malformed input JSON."
 
 parseInput :: String -> Syntax
 parseInput val = case val of
-  _ | length val > 0 && all (`elem` ("0123456789" :: String)) val ->
+  _ | not (null val) && all (`elem` ("0123456789" :: String)) val ->
     Int $ read val
   "True" -> Bool True
   "False" -> Bool False

@@ -249,7 +249,7 @@ rules =
   , rule_7add, rule_7sub , rule_7mul, rule_7div
   , rule_8, rule_9
   , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17
-  , rule_cycle
+  , rule_18
   ]
 
 rule_1 = Rule "a" (Exp (Int 5))
@@ -290,4 +290,4 @@ rule_16 = Rule "q" (Exp (String "a"))
 
 rule_17 = Rule "r" (Exp (AssertInt (Name "e") (GreaterThan 1)))
 
-rule_cycle = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
+rule_18 = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
