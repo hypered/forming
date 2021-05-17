@@ -156,6 +156,13 @@ Prelude Data.Decimal> Decimal 2 350000
 3500.00
 ```
 
+```
+Prelude Data.Decimal> (read "3500.00" :: Decimal)
+3500.00
+Prelude Data.Decimal> (read "3500.00" :: Decimal) * 1.08
+3780
+```
+
 
 # Notes
 

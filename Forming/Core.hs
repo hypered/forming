@@ -17,6 +17,7 @@ evaluate stack name rs is = case filter ((== name) . rName) rs of
     Unset -> case lookupInput (rName r) is of
       Just (Bool x) -> Result (Bool x)
       Just (Int x) -> Result (Int x)
+      Just (Decimal x) -> Result (Decimal x)
       Just (String x) -> Result (String x)
       Just _ -> error "Inputs cannot contain Unset or Name."
       Nothing -> UnsetVariables [rName r]
@@ -33,6 +34,7 @@ reduce stack e rs is = case e of
       Just err -> Error stack err
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
+  Decimal x -> Result (Decimal x)
   String x -> Result (String x)
   Annotation e t -> case reduce stack e rs is of
     Result x -> case checkType e t x of
@@ -74,7 +76,7 @@ reduce stack e rs is = case e of
     UnsetVariables xs -> UnsetVariables xs
   Add e1 e2 -> ibinop (+) stack rs is e1 e2
   Sub e1 e2 -> ibinop (-) stack rs is e1 e2
-  Mul e1 e2 -> ibinop (*) stack rs is e1 e2
+  Mul e1 e2 -> mul stack rs is e1 e2
   Div e1 e2 -> ibinop div stack rs is e1 e2
   Sum [] -> Result (Int 0)
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
@@ -110,6 +112,10 @@ union = binop TObject . op
 
 equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
 
+mul = binop' (checkingNumClass f)
+  where f (Int a) (Int b) = Int (a * b)
+        f (Decimal a) (Decimal b) = Decimal (a * b)
+
 unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
 binop t f = binop' (checkingType t f)
@@ -140,7 +146,13 @@ checkingEqClass f stack e1 e2 a b =
     (Int _, Int _) -> Result (f a b)
     (Bool _, Bool _) -> Result (f a b)
     (String _, String _) -> Result (f a b)
-    _ -> Error stack (TypeMismatch Nothing "TODO Better error message")
+    _ -> Error stack (TypeMismatch Nothing "Can't be compared.")
+
+checkingNumClass f stack e1 e2 a b =
+  case (a, b) of
+    (Int _, Int _) -> Result (f a b)
+    (Decimal _, Decimal _) -> Result (f a b)
+    _ -> Error stack (TypeMismatch Nothing "Can't do arithmetic.")
 
 lookupInput name is = lookup name is'
   where is' = map (\(Input name val) -> (name, val)) is
@@ -221,6 +233,7 @@ checkType :: Syntax -> Type -> Syntax -> Maybe EvaluationError
 checkType e a _x = case (_x, a) of
   (Bool x, TBool) -> Nothing
   (Int x, TInt) -> Nothing
+  (Decimal x, TDecimal) -> Nothing
   (String x, TString) -> Nothing
   (String x, TEnum xs) | x `elem` xs -> Nothing
   (Object _, TObject) -> Nothing
@@ -232,6 +245,7 @@ checkType e a _x = case (_x, a) of
   t = case a of
     TBool -> "Bool"
     TInt -> "Int"
+    TDecimal -> "Decimal"
     TString -> "String"
     TEnum xs -> intercalate "|" xs
     TObject -> "Object"

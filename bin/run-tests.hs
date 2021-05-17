@@ -50,6 +50,10 @@ baseTree = Tasty.testGroup "Base tests"
       @?= Result (Int 5)
 
   , HUnit.testCase "a = \"x\"" $
+      eval "a" [Rule "a" (Exp (Decimal 3500))]
+      @?= Result (Decimal (read "3500.00"))
+
+  , HUnit.testCase "a = \"x\"" $
       eval "a" [Rule "a" (Exp (String "x"))]
       @?= Result (String "x")
 

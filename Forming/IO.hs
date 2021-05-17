@@ -67,8 +67,9 @@ printError stack err = case err of
 
 printValue :: Int -> Syntax -> IO ()
 printValue indent v = case v of
-  Int x -> putStrLn (padding ++ show x)
   Bool x -> putStrLn (padding ++ show x)
+  Int x -> putStrLn (padding ++ show x)
+  Decimal x -> putStrLn (padding ++ show x)
   String x -> putStrLn (padding ++ show x)
   Object xs -> mapM_ (\(k, v) -> do
     putStrLn (padding ++ k ++ ": ") >> printValue (indent + 1) v) xs
@@ -144,13 +145,17 @@ makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Just _ -> Left "input JSON is not an object."
   Nothing -> Left "malformed input JSON."
 
+-- TODO Either allow the user to give a type when giving an input, or allow
+-- only inputs whose types are known after calling gatherUnsets.
 parseInput :: String -> Syntax
 parseInput val = case val of
   _ | not (null val) && all (`elem` ("0123456789" :: String)) val ->
     Int $ read val
+  _ | not (null val) && all (`elem` ("0123456789." :: String)) val ->
+    Decimal $ read val
   "True" -> Bool True
   "False" -> Bool False
-  _ -> String val -- TODO Add some type signature, or quotes around strings.
+  _ -> String val
 
 parseInput' (A.Bool x) = Bool x
 parseInput' (A.Number x) = case floatingOrInteger x of

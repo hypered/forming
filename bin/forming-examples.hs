@@ -98,6 +98,7 @@ main = defaultMain
       , Rule "dependant children" Unset
       , Rule "disabled children" Unset
       , Rule "gross salary" Unset
+
       , Rule "form" (Exp (Union
         (Object
           [ ("status", Annotation (Name "status")
@@ -109,7 +110,7 @@ main = defaultMain
           , ("disability", Annotation (Name "disability") TBool)
           , ("dependant children", Annotation (Name "dependant children") TInt)
           , ("disabled children", Annotation (Name "disabled children") TInt)
-          , ("gross salary", Annotation (Name "gross salary") TInt)
+          , ("gross salary", Annotation (Name "gross salary") TDecimal)
           ])
         (Cond
            -- TODO Add Or "incomplete-full-time"
@@ -117,5 +118,17 @@ main = defaultMain
            (Names ["working hours", "reference hours"])
            (Names []))
         ))
+
+      , Rule "personnal social contribution" (Exp
+         (Mul
+           (Name "personnal social contribution . normalized")
+           (Decimal (read "0.1307")))
+        )
+      , Rule "personnal social contribution . normalized" (Exp
+        (Cond
+           (Equal (Name "status") (String "white-collar"))
+           (Name "gross salary")
+           (Mul (Name "gross salary") (Decimal (read "1.08"))))
+        )
       ]
   ]

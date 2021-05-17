@@ -1,18 +1,24 @@
 module Forming.Syntax where
 
+import Data.Decimal (Decimal)
+
 import Forming.Type
 
+
+--------------------------------------------------------------------------------
 data Syntax =
     Bool Bool
-    -- Is it really useful to have assertions on whole Syntax, instead of Unset
-    -- values ?
-  | Int Int | AssertInt Syntax AssertionInt
+  | Int Int
+  | Decimal Decimal
   | String String
 
   -- Type-checking is currently done during evaluation, instead as a real
   -- type-checking phase. I.e. this acts like a dynamically-typed language.
   | Annotation Syntax Type
   | Assert Syntax Syntax -- ^ Returns the first exp, provided the second is True.
+    -- Is it really useful to have assertions on whole Syntax, instead of Unset
+    -- values ?
+  | AssertInt Syntax AssertionInt
 
   | List [Syntax]
   | Object [(String, Syntax)] -- TODO Use a Map.
