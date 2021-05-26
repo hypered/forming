@@ -119,6 +119,8 @@ main = defaultMain
            (Names []))
         ))
 
+      , Rule "result" (Exp (Name "personnal social contribution"))
+
       , Rule "personnal social contribution" (Exp
          (Mul
            (Name "personnal social contribution . normalized")
