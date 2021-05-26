@@ -7,6 +7,7 @@ import System.Environment (getArgs)
 import Text.Syntactical
 
 import Forming (run, Computation(..))
+import Forming.Server (runServer)
 
 import qualified Forming.Lexer as Lexer
 import qualified Forming.Parser as Parser
@@ -25,16 +26,19 @@ main = do
     ["--token", s] -> case Lexer.tokenize s of
       Right a -> putStrLn . unwords $ map toString a
       Left err -> putStrLn $ "indentation error: " ++ show err
+
     ["--token", "--file", fn] -> do
       s <- readFile fn
       case Lexer.tokenize s of
         Right a -> putStrLn . unwords $ map toString a
         Left err -> putStrLn $ "indentation error: " ++ show err
+
     ["--sexpr", s] -> case Lexer.tokenize s of
       Right a -> case Parser.parse a of
         Right e -> putStrLn $ showSExpr e
         Left f -> putStrLn $ showFailure f
       Left err -> putStrLn $ "indentation error: " ++ show err
+
     ["--sexpr", "--file", fn] -> do
       s <- readFile fn
       case Lexer.tokenize s of
@@ -42,20 +46,25 @@ main = do
           Right e -> putStrLn $ showSExpr e
           Left f -> putStrLn $ showFailure f
         Left err -> putStrLn $ "indentation error: " ++ show err
+
+    ["--serve", "--expr", s] -> do
+      execute (\c -> runServer [c]) s
+
     "--expr" : s : rest -> do
-      execute s rest
+      execute (flip run rest) s
+
     filename : rest -> do
       s <- readFile filename
-      execute s rest
+      execute (flip run rest) s
     _ -> putStrLn "Usage: (TODO)"
 
-execute s rest = do
+execute f s = do
   case Lexer.tokenize s of
     Right a -> case Parser.parse a of
       Right e -> case Parser.parseDeclarations e of
         Right rules -> do
           let comp = Computation "TODO" "TODO" "main" rules
-          run comp rest
+          f comp
         Left err -> print err
       Left f -> putStrLn $ showFailure f
     Left err -> putStrLn $ "indentation error: " ++ show err
