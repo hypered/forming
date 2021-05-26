@@ -73,6 +73,7 @@ run c@Computation{..} args = do
       -- Evaluate without input to give a hint a possible user inputs.
       case evaluate [] cMain cRules [] of
         UnsetVariables names -> printUnsetVariables names
+        Error _ (NoSuchRule _) -> putStrLn ("The rule \"" ++ cMain ++ "\" doesn't exist.")
         Result _ -> putStrLn "This computation doesn't require any user input."
 
     -- Generate an HTML page with technical comments.
