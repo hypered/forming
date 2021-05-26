@@ -17,6 +17,7 @@ import qualified Text.Syntactical as Syntactical
 
 data Token =
     Token Source String
+  | Bool Source Bool
   | Int Source Int
   | Decimal Source Decimal.Decimal
   | String Source String
@@ -104,6 +105,12 @@ sym = try $ do
       xs <- manyTill anyChar (lookAhead $ (oneOf "`,()⟨⟩[]\t\n " >> return ()) <|> eof)
       let chars = x:xs
       case chars of
+        "True" -> do
+          spaces
+          return (Sym (Bool src True))
+        "False" -> do
+          spaces
+          return (Sym (Bool src False))
         _ | chars `elem` keywords -> do
           pzero
         _ | all (`elem` ("0123456789" :: String)) chars -> do

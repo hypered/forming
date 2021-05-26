@@ -29,6 +29,8 @@ parseDeclaration expr = case expr of
 parseExpression expr = case expr of
   Atom (Token _ a) -> do
     return (Syntax.Name a)
+  Atom (Bool _ a) -> do
+    return (Syntax.Bool a)
   Atom (Int _ a) -> do
     return (Syntax.Int a)
   Atom (Decimal _ a) -> do
@@ -40,6 +42,11 @@ parseExpression expr = case expr of
       a' <- parseExpression (Atom a)
       b' <- parseExpression (Atom b)
       return (Syntax.Add a' b')
+  List [Atom (Token _ "ifthenelse"), Atom a, Atom b, Atom c] -> do
+    a' <- parseExpression (Atom a)
+    b' <- parseExpression (Atom b)
+    c' <- parseExpression (Atom c)
+    return (Syntax.Cond a' b' c')
   _ -> Left "TODO"
 
 
