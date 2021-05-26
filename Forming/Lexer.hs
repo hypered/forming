@@ -1,6 +1,7 @@
 {-# Language OverloadedStrings #-}
 module Forming.Lexer where
 
+import qualified Data.Decimal as Decimal
 import GHC.Exts (IsString(..))
 import Text.ParserCombinators.Parsec
 
@@ -17,6 +18,8 @@ import qualified Text.Syntactical as Syntactical
 data Token =
     Token Source String
   | Int Source Int
+  | Decimal Source Decimal.Decimal
+  | String Source String
   deriving Show
 
 data Source = Source Int Int -- source file line and column
@@ -94,16 +97,24 @@ sym = try $ do
   src <- source
   x <- noneOf "\t\n "
   if x `elem` ("`,()⟨⟩[]" :: String)
-    then spaces >> return (Sym $ Token src [x])
+    then do
+      spaces
+      return (Sym $ Token src [x])
     else do
       xs <- manyTill anyChar (lookAhead $ (oneOf "`,()⟨⟩[]\t\n " >> return ()) <|> eof)
-      if (x:xs) `elem` keywords
-        then pzero
-        else do
+      let chars = x:xs
+      case chars of
+        _ | chars `elem` keywords -> do
+          pzero
+        _ | all (`elem` ("0123456789" :: String)) chars -> do
           spaces
-          if all (`elem` ("0123456789" :: String)) (x:xs)
-            then return (Sym . Int src $ read (x:xs))
-            else return (Sym . Token src $ x:xs)
+          return (Sym (Int src (read chars)))
+        _ | all (`elem` ("0123456789." :: String)) chars -> do
+          spaces
+          return (Sym (Decimal src (read chars)))
+        _ -> do
+          spaces
+          return (Sym (Token src chars))
 
 -- Parse a symbol delimited by forward slashes (to allow spaces).
 ssym :: P (Tree Token)
@@ -133,4 +144,4 @@ str = try $ do
   x <- many (noneOf "\t\n\"")
   _ <- char '"'
   spaces
-  return . Sym $ Token src ('"' : x ++ "\"")
+  return . Sym $ String src x

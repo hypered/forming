@@ -31,6 +31,10 @@ parseExpression expr = case expr of
     return (Syntax.Name a)
   Atom (Int _ a) -> do
     return (Syntax.Int a)
+  Atom (Decimal _ a) -> do
+    return (Syntax.Decimal a)
+  Atom (String _ a) -> do
+    return (Syntax.String a)
   List [Atom (Token _ op), Atom a, Atom b] -> case op of
     "+" -> do
       a' <- parseExpression (Atom a)

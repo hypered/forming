@@ -74,10 +74,10 @@ reduce stack e rs is = case e of
     (Result t) -> Error stack (TypeMismatch Nothing $ "Expected a Bool, got " ++ show t)
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
-  Add e1 e2 -> ibinop (+) stack rs is e1 e2
-  Sub e1 e2 -> ibinop (-) stack rs is e1 e2
+  Add e1 e2 -> add stack rs is e1 e2
+  Sub e1 e2 -> sub stack rs is e1 e2
   Mul e1 e2 -> mul stack rs is e1 e2
-  Div e1 e2 -> ibinop div stack rs is e1 e2
+  Div e1 e2 -> div' stack rs is e1 e2
   Sum [] -> Result (Int 0)
   Sum (e : es) -> reduce stack (Add e (Sum es)) rs is
 
@@ -112,9 +112,18 @@ union = binop TObject . op
 
 equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
 
+add = binop' (checkingNumClass f)
+  where f (Int a) (Int b) = Int (a + b)
+        f (Decimal a) (Decimal b) = Decimal (a + b)
+sub = binop' (checkingNumClass f)
+  where f (Int a) (Int b) = Int (a - b)
+        f (Decimal a) (Decimal b) = Decimal (a - b)
 mul = binop' (checkingNumClass f)
   where f (Int a) (Int b) = Int (a * b)
         f (Decimal a) (Decimal b) = Decimal (a * b)
+div' = binop' (checkingNumClass f)
+  where f (Int a) (Int b) = Int (div a b)
+        f (Decimal a) (Decimal b) = Decimal (a / b)
 
 unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
