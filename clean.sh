@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-rm -rf .hpc coverage tix bin/forming-examples bin/run-tests
+rm -rf .hpc coverage tix bin/forming bin/forming-examples bin/run-tests
 find . -type f -name '*.tix' -delete
 find . -type f -name '*.hi' -delete
 find . -type f -name '*.o' -delete
