@@ -35,6 +35,12 @@ parseDefinition expr = case expr of
     Right (name, body')
   _ -> Left "TODO parseDefinition"
 
+parseInherit (Atom (Token _ a) : Atom (Token _ ",") : rest) = do
+  members <- parseInherit rest
+  return (a : members)
+parseInherit [Atom (Token _ a)] = return [a]
+parseInherit _ = Left "TODO parseInherit"
+
 parseExpression expr = case expr of
   Atom (Token _ "{}") -> do
     return (Syntax.Object [])
@@ -65,6 +71,9 @@ parseExpression expr = case expr of
     b' <- parseExpression (Atom b)
     c' <- parseExpression (Atom c)
     return (Syntax.Cond a' b' c')
+  List [Atom (Token _ "declarations"), List (Atom (Token _ "inherit") : names)] -> do
+    members <- parseInherit names
+    return (Syntax.Names members)
   List (Atom (Token _ "declarations") : decls) -> do
   -- Similar to parseRules but doens't allow to define inputs. Used to define
   -- objects.
