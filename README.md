@@ -154,6 +154,8 @@ Prelude Data.Decimal> (read "3500.00" :: Decimal)
 3500.00
 Prelude Data.Decimal> Decimal 2 350000
 3500.00
+Prelude Data.Decimal> roundTo 2 3500
+3500.00
 ```
 
 ```
