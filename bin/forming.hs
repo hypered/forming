@@ -50,12 +50,17 @@ main = do
     ["--serve", "--expr", s] -> do
       execute (\c -> runServer [c]) s
 
+    ["--serve", filename] -> do
+      s <- readFile filename
+      execute (\c -> runServer [c]) s
+
     "--expr" : s : rest -> do
       execute (flip run rest) s
 
     filename : rest -> do
       s <- readFile filename
       execute (flip run rest) s
+
     _ -> putStrLn "Usage: (TODO)"
 
 execute f s = do
