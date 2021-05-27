@@ -41,6 +41,12 @@ parseInherit (Atom (Token _ a) : Atom (Token _ ",") : rest) = do
 parseInherit [Atom (Token _ a)] = return [a]
 parseInherit _ = Left "TODO parseInherit"
 
+parseEnumeration (List [Atom (Token _ "|"), as, Atom (Token _ b)]) = do
+  items <- parseEnumeration as
+  return (items ++ [b])
+parseEnumeration (Atom (Token _ a)) = return [a]
+parseEnumeration _ = Left "TODO parseEnumeration"
+
 parseExpression expr = case expr of
   Atom (Token _ "{}") -> do
     return (Syntax.Object [])
@@ -61,6 +67,11 @@ parseExpression expr = case expr of
     ":" -> do
       a' <- parseExpression (Atom a)
       return (Syntax.Annotation a' b)
+  List [Atom (Token _ op), Atom a, List (Atom (Token src "|") : rest)] -> case op of
+    ":" -> do
+      a' <- parseExpression (Atom a)
+      b <- parseEnumeration (List (Atom (Token src "|") : rest))
+      return (Syntax.Annotation a' (Type.TEnum b))
   List [Atom (Token _ op), Atom a, Atom b] -> case op of
     "+" -> do
       a' <- parseExpression (Atom a)
