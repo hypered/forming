@@ -72,7 +72,7 @@ parseExpression expr = case expr of
       a' <- parseExpression (Atom a)
       b <- parseEnumeration (List (Atom (Token src "|") : rest))
       return (Syntax.Annotation a' (Type.TEnum b))
-  List [Atom (Token _ op), Atom a, Atom b] -> do
+  List [Atom (Token _ op), a, b] -> do
     op' <- case op of
       "+" -> return Syntax.Add
       "-" -> return Syntax.Sub
@@ -80,8 +80,8 @@ parseExpression expr = case expr of
       "/" -> return Syntax.Div
       "==" -> return Syntax.Equal
       _ -> Left ("TODO Unsupported operator " ++ op)
-    a' <- parseExpression (Atom a)
-    b' <- parseExpression (Atom b)
+    a' <- parseExpression a
+    b' <- parseExpression b
     return (op' a' b')
   List [Atom (Token _ "ifthenelse"), a, b, c] -> do
     a' <- parseExpression a
