@@ -7,6 +7,7 @@ import Forming
 import Forming.Lexer (Token(..))
 
 import qualified Forming.Syntax as Syntax
+import qualified Forming.Type as Type
 
 
 --------------------------------------------------------------------------------
@@ -16,7 +17,7 @@ parse = shunt table . map Atom
 --------------------------------------------------------------------------------
 parseDeclarations expr = case expr of
   List (Atom (Token _ "declarations") : decls) -> traverse parseDeclaration decls
-  _ -> Left "TODO"
+  _ -> Left "TODO parseDeclarations"
 
 parseDeclaration expr = case expr of
   List [Atom (Token _ "="), Atom (Token _ name), Atom (Token _ "input")] ->
@@ -24,7 +25,7 @@ parseDeclaration expr = case expr of
   List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
     body' <- parseExpression body
     Right (Rule name (Exp body'))
-  _ -> Left "TODO"
+  _ -> Left "TODO parseDeclaration"
 
 parseExpression expr = case expr of
   Atom (Token _ a) -> do
@@ -37,6 +38,13 @@ parseExpression expr = case expr of
     return (Syntax.Decimal a)
   Atom (String _ a) -> do
     return (Syntax.String a)
+  Atom (Type _ a) -> do
+    error "A type should only appear as an annotation."
+    -- ... which is parsed directly below.
+  List [Atom (Token _ op), Atom a, Atom (Type _ b)] -> case op of
+    ":" -> do
+      a' <- parseExpression (Atom a)
+      return (Syntax.Annotation a' b)
   List [Atom (Token _ op), Atom a, Atom b] -> case op of
     "+" -> do
       a' <- parseExpression (Atom a)
@@ -47,7 +55,7 @@ parseExpression expr = case expr of
     b' <- parseExpression (Atom b)
     c' <- parseExpression (Atom c)
     return (Syntax.Cond a' b' c')
-  _ -> Left "TODO"
+  _ -> Left ("TODO parseExpression : " ++ show expr)
 
 
 --------------------------------------------------------------------------------

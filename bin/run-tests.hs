@@ -18,6 +18,8 @@ main = do
 
 
 --------------------------------------------------------------------------------
+-- | These are evaluation tests on abstract syntax trees (no lexing or parsing
+-- involved).
 baseTree :: TestTree
 baseTree = Tasty.testGroup "Base tests"
   [ HUnit.testCase "Error reporting (no such rule - 1)" $

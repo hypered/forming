@@ -10,6 +10,9 @@ import Text.Syntactical.Indent (Tree(..), strides')
 
 import qualified Text.Syntactical as Syntactical
 
+import Forming.Type (Type)
+import qualified Forming.Type as Type
+
 
 ----------------------------------------------------------------------
 -- The token type for Syntactical
@@ -21,6 +24,7 @@ data Token =
   | Int Source Int
   | Decimal Source Decimal.Decimal
   | String Source String
+  | Type Source Type
   deriving Show
 
 data Source = Source Int Int -- source file line and column
@@ -111,6 +115,9 @@ sym = try $ do
         "False" -> do
           spaces
           return (Sym (Bool src False))
+        "Int" -> do
+          spaces
+          return (Sym (Type src Type.TInt))
         _ | chars `elem` keywords -> do
           pzero
         _ | all (`elem` ("0123456789" :: String)) chars -> do
