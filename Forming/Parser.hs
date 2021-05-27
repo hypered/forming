@@ -83,10 +83,10 @@ parseExpression expr = case expr of
     a' <- parseExpression (Atom a)
     b' <- parseExpression (Atom b)
     return (op' a' b')
-  List [Atom (Token _ "ifthenelse"), Atom a, Atom b, Atom c] -> do
-    a' <- parseExpression (Atom a)
-    b' <- parseExpression (Atom b)
-    c' <- parseExpression (Atom c)
+  List [Atom (Token _ "ifthenelse"), a, b, c] -> do
+    a' <- parseExpression a
+    b' <- parseExpression b
+    c' <- parseExpression c
     return (Syntax.Cond a' b' c')
   List [Atom (Token _ "declarations"), List (Atom (Token _ "inherit") : names)] -> do
     members <- parseInherit names
