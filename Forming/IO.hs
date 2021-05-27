@@ -71,8 +71,12 @@ printValue indent v = case v of
   Int x -> putStrLn (padding ++ show x)
   Decimal x -> putStrLn (padding ++ show x)
   String x -> putStrLn (padding ++ show x)
-  Object xs -> mapM_ (\(k, v) -> do
-    putStrLn (padding ++ k ++ ": ") >> printValue (indent + 1) v) xs
+  Object xs -> do
+    putStrLn (padding ++ "{")
+    mapM_ (\(k, v) -> do
+      putStrLn (padding ++ "  " ++ k ++ ": ") >> printValue (indent + 2) v)
+      xs
+    putStrLn (padding ++ "}")
 
   where padding = replicate (indent * 2) ' '
 

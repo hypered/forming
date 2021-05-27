@@ -66,7 +66,7 @@ main = do
 execute f s = do
   case Lexer.tokenize s of
     Right a -> case Parser.parse a of
-      Right e -> case Parser.parseDeclarations e of
+      Right e -> case Parser.parseRules e of
         Right rules -> do
           let comp = Computation "TODO" "TODO" "main" rules
           f comp

@@ -5,6 +5,7 @@ import Text.Syntactical hiding (Token)
 
 import Forming
 import Forming.Lexer (Token(..))
+import Forming.Syntax (Syntax)
 
 import qualified Forming.Syntax as Syntax
 import qualified Forming.Type as Type
@@ -15,19 +16,28 @@ parse :: [Token] -> Either (Failure Token) (SExpr Token)
 parse = shunt table . map Atom
 
 --------------------------------------------------------------------------------
-parseDeclarations expr = case expr of
-  List (Atom (Token _ "declarations") : decls) -> traverse parseDeclaration decls
-  _ -> Left "TODO parseDeclarations"
+parseRules :: SExpr Token -> Either String [Rule]
+parseRules expr = case expr of
+  List (Atom (Token _ "declarations") : decls) -> traverse parseRule decls
+  _ -> Left "TODO parseRules"
 
-parseDeclaration expr = case expr of
+parseRule expr = case expr of
   List [Atom (Token _ "="), Atom (Token _ name), Atom (Token _ "input")] ->
     Right (Rule name Unset)
   List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
     body' <- parseExpression body
     Right (Rule name (Exp body'))
-  _ -> Left "TODO parseDeclaration"
+  _ -> Left "TODO parseRule"
+
+parseDefinition expr = case expr of
+  List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
+    body' <- parseExpression body
+    Right (name, body')
+  _ -> Left "TODO parseDefinition"
 
 parseExpression expr = case expr of
+  Atom (Token _ "{}") -> do
+    return (Syntax.Object [])
   Atom (Token _ a) -> do
     return (Syntax.Name a)
   Atom (Bool _ a) -> do
@@ -55,6 +65,11 @@ parseExpression expr = case expr of
     b' <- parseExpression (Atom b)
     c' <- parseExpression (Atom c)
     return (Syntax.Cond a' b' c')
+  List (Atom (Token _ "declarations") : decls) -> do
+  -- Similar to parseRules but doens't allow to define inputs. Used to define
+  -- objects.
+    members <- traverse parseDefinition decls
+    return (Syntax.Object members)
   _ -> Left ("TODO parseExpression : " ++ show expr)
 
 
