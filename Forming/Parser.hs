@@ -63,26 +63,6 @@ parseExpression expr = case expr of
   Atom (Type _ a) -> do
     error "A type should only appear as an annotation."
     -- ... which is parsed directly below.
-  List [Atom (Token _ op), Atom a, Atom (Type _ b)] -> case op of
-    ":" -> do
-      a' <- parseExpression (Atom a)
-      return (Syntax.Annotation a' b)
-  List [Atom (Token _ op), Atom a, List (Atom (Token src "|") : rest)] -> case op of
-    ":" -> do
-      a' <- parseExpression (Atom a)
-      b <- parseEnumeration (List (Atom (Token src "|") : rest))
-      return (Syntax.Annotation a' (Type.TEnum b))
-  List [Atom (Token _ op), a, b] -> do
-    op' <- case op of
-      "+" -> return Syntax.Add
-      "-" -> return Syntax.Sub
-      "*" -> return Syntax.Mul
-      "/" -> return Syntax.Div
-      "==" -> return Syntax.Equal
-      _ -> Left ("TODO Unsupported operator " ++ op)
-    a' <- parseExpression a
-    b' <- parseExpression b
-    return (op' a' b')
   List [Atom (Token _ "ifthenelse"), a, b, c] -> do
     a' <- parseExpression a
     b' <- parseExpression b
@@ -96,6 +76,26 @@ parseExpression expr = case expr of
   -- objects.
     members <- traverse parseDefinition decls
     return (Syntax.Object members)
+  List [Atom (Token _ op), a, Atom (Type _ b)] -> case op of
+    ":" -> do
+      a' <- parseExpression a
+      return (Syntax.Annotation a' b)
+  List [Atom (Token _ op), a, List (Atom (Token src "|") : rest)] -> case op of
+    ":" -> do
+      a' <- parseExpression a
+      b <- parseEnumeration (List (Atom (Token src "|") : rest))
+      return (Syntax.Annotation a' (Type.TEnum b))
+  List [Atom (Token _ op), a, b] -> do
+    op' <- case op of
+      "+" -> return Syntax.Add
+      "-" -> return Syntax.Sub
+      "*" -> return Syntax.Mul
+      "/" -> return Syntax.Div
+      "==" -> return Syntax.Equal
+      _ -> Left ("TODO Unsupported operator " ++ op)
+    a' <- parseExpression a
+    b' <- parseExpression b
+    return (op' a' b')
   _ -> Left ("TODO parseExpression : " ++ show expr)
 
 
