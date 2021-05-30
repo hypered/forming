@@ -21,9 +21,10 @@ parseRules expr = case expr of
   List (Atom (Token _ "declarations") : decls) -> traverse parseRule decls
   _ -> Left "TODO parseRules"
 
+parseRule :: SExpr Token -> Either String Rule
 parseRule expr = case expr of
   List [Atom (Token _ "="), Atom (Token _ name), Atom (Token _ "input")] ->
-    Right (Rule name Unset)
+    Right (Rule name (Unset Nothing))
   List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
     body' <- parseExpression body
     Right (Rule name (Exp body'))

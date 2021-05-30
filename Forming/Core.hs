@@ -12,19 +12,27 @@ import Forming.Type
 
 
 --------------------------------------------------------------------------------
+evaluate :: [String] -> String -> [Rule] -> [Input] -> Result
 evaluate stack name rs is = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
-    Unset -> case lookupInput (rName r) is of
-      Just (Bool x) -> Result (Bool x)
-      Just (Int x) -> Result (Int x)
-      Just (Decimal x) -> Result (Decimal x)
-      Just (String x) -> Result (String x)
-      Just _ -> error "Inputs cannot contain Unset or Name."
+
+    Unset mtype -> case lookupInput (rName r) is of
+      -- TODO Ruleout Syntax that are not "Value"
+      Just (Name _) -> error "Inputs cannot be a Name."
+      Just e -> case mtype of
+        Just t -> case checkType e t e of
+          Nothing -> Result e
+          Just err -> Error stack err
+        Nothing -> Result e
       Nothing -> UnsetVariables [rName r]
+
     Exp e -> reduce (name : stack) e rs is
+
   [] -> Error [name] (NoSuchRule name)
+
   _ -> Error [name] (MultipleRules name)
 
+reduce :: [String] -> Syntax -> [Rule] -> [Input] -> Result
 reduce stack e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
@@ -174,7 +182,8 @@ gatherUnsets :: Maybe Type -> String -> [Rule]
   -> Either EvaluationError [(Rule, Maybe Type)]
 gatherUnsets mtype name rs = case filter ((== name) . rName) rs of
   [r] -> case rFormula r of
-    Unset -> Right [(r, mtype)]
+    Unset Nothing -> Right [(r, mtype)]
+    Unset mtype' -> Right [(r, mtype')]
     Exp e -> gatherUnsets' mtype rs e
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
@@ -287,7 +296,7 @@ data Rule = Rule
   }
   deriving (Eq, Show)
 
-data Formula = Unset | Exp Syntax
+data Formula = Unset (Maybe Type) | Exp Syntax
   deriving (Eq, Show)
 
 data EvaluationError =
@@ -314,7 +323,7 @@ data Input = Input String Syntax
   deriving Show
 
 isUnset :: Rule -> Bool
-isUnset (Rule _ Unset) = True
+isUnset (Rule _ (Unset _)) = True
 isUnset _ = False
 
 isTypeMismatch :: Result -> Bool

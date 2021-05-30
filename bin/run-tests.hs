@@ -35,7 +35,7 @@ baseTree = Tasty.testGroup "Base tests"
       @?= Error ["a"] (MultipleRules "a")
 
   , HUnit.testCase "Error reporting (unset variable)" $
-      eval "a" [Rule "a" Unset]
+      eval "a" [Rule "a" (Unset Nothing)]
       @?= UnsetVariables ["a"]
 
 
@@ -114,6 +114,19 @@ baseTree = Tasty.testGroup "Base tests"
   , HUnit.testCase "Annotation String - Enum (mismatch)" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
         eval "a" [Rule "a" (Exp (Annotation (String "x") (TEnum ["y", "z"])))]
+
+
+  , HUnit.testCase "Annotated unset variable" $
+      evaluate [] "a" [Rule "a" (Unset Nothing)] [Input "a" (Bool True)]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "Annotated unset variable" $
+      evaluate [] "a" [Rule "a" (Unset (Just TBool))] [Input "a" (Bool True)]
+      @?= Result (Bool True)
+
+  , HUnit.testCase "Annotated unset variable" $ assertBool "expected type-mismatch" $
+      isTypeMismatch $
+        evaluate [] "a" [Rule "a" (Unset (Just TInt))] [Input "a" (Bool True)]
 
 
   , HUnit.testCase "TODO" $
@@ -266,7 +279,7 @@ rule_3 = Rule "c" (Exp (Name "b"))
 
 rule_4 = Rule "d" (Exp (Name "c"))
 
-rule_5 = Rule "e" Unset
+rule_5 = Rule "e" (Unset Nothing)
 
 -- Reference an unset rule.
 rule_6 = Rule "f" (Exp (Name "e"))
@@ -278,7 +291,7 @@ rule_7div = Rule "g-div" (Exp (Div (Name "a") (Name "b")))
 
 rule_8 = Rule "h" (Exp (Sum [Name "a", Name "b", Name "c"]))
 
-rule_9 = Rule "i" Unset
+rule_9 = Rule "i" (Unset Nothing)
 
 rule_10 = Rule "k" (Exp (Cond (Name "i") (Int 1) (Int 2)))
 
