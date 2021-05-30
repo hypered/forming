@@ -36,7 +36,11 @@ instance IsString Token where
 
 instance Syntactical.Token Token where
   toString (Token _ t) = t
+  toString (Bool _ a) = show a
   toString (Int _ t) = show t
+  toString (Decimal _ a) = show a
+  toString (String _ a) = show a
+  toString (Type _ a) = show a
   operator = myOperator
   consider (Token _ a) (Token _ b) = a == b
   consider (Int _ a) (Int _ b) = a == b
@@ -118,6 +122,9 @@ sym = try $ do
         "Int" -> do
           spaces
           return (Sym (Type src Type.TInt))
+        "Decimal" -> do
+          spaces
+          return (Sym (Type src Type.TDecimal))
         _ | chars `elem` keywords -> do
           pzero
         _ | all (`elem` ("0123456789" :: String)) chars -> do
