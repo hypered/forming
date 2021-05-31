@@ -20,36 +20,36 @@ main = defaultMain
       "Compute a user input."
       "value"
       [ Rule "value" (Exp (Name "a"))
-      , Rule "a" Unset
+      , Rule "a" (Unset Nothing)
       ]
   , Computation
       "annotate-a"
       "Compute a int user input."
       "value"
       [ Rule "value" (Exp (Annotation (Name "a") TInt))
-      , Rule "a" Unset
+      , Rule "a" (Unset Nothing)
       ]
   , Computation
       "annotate-enum"
       "Compute a user input in hello or bye."
       "value"
       [ Rule "value" (Exp (Annotation (Name "a") (TEnum ["hello", "bye"])))
-      , Rule "a" Unset
+      , Rule "a" (Unset Nothing)
       ]
   , Computation
       "add"
       "Compute the addition of two integers a and b."
       "value"
       [ Rule "value" (Exp (Add (Name "a") (Name "b")))
-      , Rule "a" Unset
-      , Rule "b" Unset
+      , Rule "a" (Unset Nothing)
+      , Rule "b" (Unset Nothing)
       ]
   , Computation
       "greater-than-10"
       "A form to obtain an integer greater than 10."
       "value"
       [ Rule "value" (Exp (AssertInt (Name "a") (GreaterThan 10)))
-      , Rule "a" Unset
+      , Rule "a" (Unset Nothing)
       ]
   , Computation
       "add-greater-than-10"
@@ -57,8 +57,8 @@ main = defaultMain
       \than 10."
       "value"
       [ Rule "value" (Exp (AssertInt (Add (Name "a") (Name "b")) (GreaterThan 10)))
-      , Rule "a" Unset
-      , Rule "b" Unset
+      , Rule "a" (Unset Nothing)
+      , Rule "b" (Unset Nothing)
       ]
   -- Similar to add-greater-than-10, but using a more generic Assert mechanism,
   -- instead of the more specific AssertInt (which can be removed, although it
@@ -69,16 +69,16 @@ main = defaultMain
       \than 10."
       "value"
       [ Rule "value" (Exp (Assert (Name "c") (LessThan (Int 10) (Name "c"))))
-      , Rule "a" Unset
-      , Rule "b" Unset
+      , Rule "a" (Unset Nothing)
+      , Rule "b" (Unset Nothing)
       , Rule "c" (Exp (Add (Name "a") (Name "b")))
       ]
   , Computation
       "has-a-cat"
       "A form to obtain a cat's name, if there is a cat."
       "form"
-      [ Rule "has a cat" Unset
-      , Rule "a cat's name" Unset
+      [ Rule "has a cat" (Unset Nothing)
+      , Rule "a cat's name" (Unset Nothing)
       , Rule "form" (Exp
         (Union
           (Names ["has a cat"])
@@ -89,15 +89,15 @@ main = defaultMain
       "compensation"
       "A form to compute a net salary given a gross salary."
       "form"
-      [ Rule "status" Unset
-      , Rule "regime" Unset
-      , Rule "working hours" Unset
-      , Rule "reference hours" Unset
-      , Rule "marital status" Unset
-      , Rule "disability" Unset
-      , Rule "dependant children" Unset
-      , Rule "disabled children" Unset
-      , Rule "gross salary" Unset
+      [ Rule "status" (Unset Nothing)
+      , Rule "regime" (Unset Nothing)
+      , Rule "working hours" (Unset Nothing)
+      , Rule "reference hours" (Unset Nothing)
+      , Rule "marital status" (Unset Nothing)
+      , Rule "disability" (Unset Nothing)
+      , Rule "dependant children" (Unset Nothing)
+      , Rule "disabled children" (Unset Nothing)
+      , Rule "gross salary" (Unset Nothing)
 
       , Rule "form" (Exp (Union
         (Object
