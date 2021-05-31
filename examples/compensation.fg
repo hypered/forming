@@ -1,0 +1,38 @@
+main = result
+
+status = input : blue-collar | white-collar
+regime = input : full-time | incomplete-full-time | part-time
+working-hours = input
+reference-hours = input
+marital-status = input : single | married-1-income | married-2-income
+disability = input : Bool
+dependant-children = input : Int
+disabled-children = input : Int
+gross-salary = input : Decimal
+
+result = personnal-social-contribution
+
+form = union
+  { status = status
+  ; regime = regime
+  ; marital-status = marital-status
+  ; disability = disability
+  ; dependant-children = dependant-children
+  ; disabled-children = disabled-children
+  ; gross-salary = gross-salary
+  }
+
+  ( if regime == "part-time"
+    then { working-hours = working-hours
+         ; reference-hours = reference-hours
+         }
+    else {}
+  )
+
+personnal-social-contribution = 
+  personnal-social-contribution-normalized * 0.1307
+
+personnal-social-contribution-normalized =
+  if status == "white-collar"
+  then gross-salary
+  else gross-salary * 1.08
