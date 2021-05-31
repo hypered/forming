@@ -43,7 +43,11 @@ instance Syntactical.Token Token where
   toString (Type _ a) = show a
   operator = myOperator
   consider (Token _ a) (Token _ b) = a == b
+  consider (Bool _ a) (Bool _ b) = a == b
   consider (Int _ a) (Int _ b) = a == b
+  consider (Decimal _ a) (Decimal _ b) = a == b
+  consider (String _ a) (String _ b) = a == b
+  consider (Type _ a) (Type _ b) = a == b
   consider _ _ = False
 
 -- Rewrite the sub-expressions as we apply the operator.
@@ -119,12 +123,18 @@ sym = try $ do
         "False" -> do
           spaces
           return (Sym (Bool src False))
+        "Bool" -> do
+          spaces
+          return (Sym (Type src Type.TBool))
         "Int" -> do
           spaces
           return (Sym (Type src Type.TInt))
         "Decimal" -> do
           spaces
           return (Sym (Type src Type.TDecimal))
+        "String" -> do
+          spaces
+          return (Sym (Type src Type.TString))
         _ | chars `elem` keywords -> do
           pzero
         _ | all (`elem` ("0123456789" :: String)) chars -> do
