@@ -63,7 +63,7 @@ parseEnumeration (List [Atom (Token _ "|"), as, Atom (Token _ b)]) = do
   items <- parseEnumeration as
   return (items ++ [b])
 parseEnumeration (Atom (Token _ a)) = return [a]
-parseEnumeration _ = Left "TODO parseEnumeration"
+parseEnumeration expr = Left ("TODO parseEnumeration: " ++ show expr)
 
 parseExpression expr = case expr of
   Atom (Token _ "{}") -> do
@@ -110,7 +110,7 @@ parseExpression expr = case expr of
       "*" -> return Syntax.Mul
       "/" -> return Syntax.Div
       "==" -> return Syntax.Equal
-      _ -> Left ("TODO Unsupported operator " ++ op)
+      _ -> Left ("TODO Unsupported operator " ++ op ++ ": " ++ show expr)
     a' <- parseExpression a
     b' <- parseExpression b
     return (op' a' b')
