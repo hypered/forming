@@ -25,6 +25,14 @@ parseRule :: SExpr Token -> Either String Rule
 parseRule expr = case expr of
   List [Atom (Token _ "="), Atom (Token _ name), Atom (Token _ "input")] ->
     Right (Rule name (Unset Nothing))
+  List [Atom (Token _ "="), Atom (Token _ name),
+      List [Atom (Token _ ":"), Atom (Token _ "input"), Atom (Type _ b)]] ->
+    Right (Rule name (Unset (Just b)))
+  List [Atom (Token _ "="), Atom (Token _ name),
+      List [Atom (Token _ ":"), Atom (Token _ "input"),
+        List (Atom (Token src "|") : rest)]] -> do
+    b <- parseEnumeration (List (Atom (Token src "|") : rest))
+    Right (Rule name (Unset (Just (Type.TEnum b))))
   List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
     body' <- parseExpression body
     Right (Rule name (Exp body'))
