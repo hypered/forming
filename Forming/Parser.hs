@@ -110,6 +110,7 @@ parseExpression expr = case expr of
       "*" -> return Syntax.Mul
       "/" -> return Syntax.Div
       "==" -> return Syntax.Equal
+      "union" -> return Syntax.Union
       _ -> Left ("TODO Unsupported operator " ++ op ++ ": " ++ show expr)
     a' <- parseExpression a
     b' <- parseExpression b
