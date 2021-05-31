@@ -70,7 +70,7 @@ run c@Computation{..} args = do
     -- Show a help message.
     ["--help"] -> do
       putStrLn cName
-      -- Evaluate without input to give a hint a possible user inputs.
+      -- Evaluate without input to give a hint of possible user inputs.
       case evaluate [] cMain cRules [] of
         UnsetVariables names -> printUnsetVariables names
         Error _ (NoSuchRule _) -> putStrLn ("The rule \"" ++ cMain ++ "\" doesn't exist.")

@@ -24,7 +24,12 @@ import Forming.Type
 --------------------------------------------------------------------------------
 compute :: Computation -> Either String (Maybe String, [Input]) -> Either String Result
 compute Computation{..} mis = case mis of
-  Right (mname, is) -> Right $ evaluate [] (fromMaybe cMain mname) cRules is
+  Right (mname, is) ->
+    -- Special case for the CLI: if there is only one naked expression,
+    -- evaluate it (instead of using named rules).
+    case cRules of
+      [Naked e] -> return $ reduce [] e cRules is
+      _ -> return $ evaluate [] (fromMaybe cMain mname) cRules is
   Left err -> Left err
 
 

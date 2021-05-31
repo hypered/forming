@@ -13,7 +13,7 @@ import Forming.Type
 
 --------------------------------------------------------------------------------
 evaluate :: [String] -> String -> [Rule] -> [Input] -> Result
-evaluate stack name rs is = case filter ((== name) . rName) rs of
+evaluate stack name rs is = case filter ((== name) . rName) rs' of
   [r] -> case rFormula r of
 
     Unset mtype -> case lookupInput (rName r) is of
@@ -26,11 +26,14 @@ evaluate stack name rs is = case filter ((== name) . rName) rs of
         Nothing -> Result e
       Nothing -> UnsetVariables [rName r]
 
-    Exp e -> reduce (name : stack) e rs is
+    Exp e -> reduce (name : stack) e rs' is
 
   [] -> Error [name] (NoSuchRule name)
 
   _ -> Error [name] (MultipleRules name)
+
+  where
+  rs' = filter isNamedRule rs
 
 reduce :: [String] -> Syntax -> [Rule] -> [Input] -> Result
 reduce stack e rs is = case e of
@@ -180,13 +183,16 @@ lookupInput name is = lookup name is'
 -- trivial to do (e.g. there is a direct annotation of that variable).
 gatherUnsets :: Maybe Type -> String -> [Rule]
   -> Either EvaluationError [(Rule, Maybe Type)]
-gatherUnsets mtype name rs = case filter ((== name) . rName) rs of
+gatherUnsets mtype name rs = case filter ((== name) . rName) rs' of
   [r] -> case rFormula r of
     Unset Nothing -> Right [(r, mtype)]
     Unset mtype' -> Right [(r, mtype')]
-    Exp e -> gatherUnsets' mtype rs e
+    Exp e -> gatherUnsets' mtype rs' e
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
+
+  where
+  rs' = filter isNamedRule rs
 
 gatherUnsets' :: Maybe Type -> [Rule] -> Syntax -> Either EvaluationError [(Rule, Maybe Type)]
 gatherUnsets' mtype rs e = case e of
@@ -290,10 +296,11 @@ data Computation = Computation
 
 -- A rule is a binding of a name to a formula, which can be reduced (evaluated)
 -- to a value. Names can be multiple words, e.g. "meal unit price".
-data Rule = Rule
-  { rName :: String
-  , rFormula :: Formula
-  }
+-- It can be an unnamed (naked) expression, to allow Forming to be used as a
+-- simple calculator.
+data Rule =
+    Rule { rName :: String , rFormula :: Formula }
+  | Naked { rExpression :: Syntax }
   deriving (Eq, Show)
 
 data Formula = Unset (Maybe Type) | Exp Syntax
@@ -325,6 +332,9 @@ data Input = Input String Syntax
 isUnset :: Rule -> Bool
 isUnset (Rule _ (Unset _)) = True
 isUnset _ = False
+
+isNamedRule (Rule _ _) = True
+isNamedRule _ = False
 
 isTypeMismatch :: Result -> Bool
 isTypeMismatch (Error _ (TypeMismatch _ _)) = True
