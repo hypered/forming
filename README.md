@@ -176,8 +176,9 @@ $ runghc -i../design-system -i../syntactical bin/forming.hs examples/trivial-1.f
 $ FORMING_SITE_DIR=../design-system runghc -i../design-system -i../syntactical bin/forming.hs --serve examples/trivial-a.fg
 ```
 
-Then visit `http://127.0.0.1:8000/noteed/TODO`. (The `TODO` should be
-`trivial-a` or `examples/trivial-a` in the future.)
+Then visit `http://127.0.0.1:8000/noteed/TODO` or
+`http://127.0.0.1:8000/noteed/TODO/+view`. (The `TODO` should be `trivial-a` or
+`examples/trivial-a` in the future.)
 
 
 # See also
