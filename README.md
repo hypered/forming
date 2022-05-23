@@ -35,6 +35,12 @@ The CLIs produced with Forming:
   given rule
 - Can display a help message
 
+The HTTP server can:
+
+- List the available forms
+- For each, either display a description, or the form itself
+- For each, compute a result and display it (although a bit crudely)
+
 
 # Development
 
@@ -44,8 +50,10 @@ I currently use a Nix shell provided by `shell.nix`:
 $ nix-shell
 ```
 
-I also need to bring code from my `design-system` repository. So e.g. when
-using `runghc`:
+I also need to bring code from my
+[`design-system`](https://github.com/hypered/design-system) repository, which
+is expected to live at `../design-system`, relative to this repository. So e.g.
+when using `runghc`:
 
 ```
 $ runghc -i../design-system bin/add.hs --html
@@ -77,7 +85,10 @@ $ nix-shell
 $ ./run-server.sh
 ```
 
-Or as a command-line tool:
+The current homepage at `/` is re-used from another project. Insteadm navigate
+to `/noteed` to see a list of forms.
+
+The same program can also be used as a command-line tool:
 
 ```
 $ runghc -i../design-system bin/forming-examples.hs --help
