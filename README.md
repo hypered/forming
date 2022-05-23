@@ -41,6 +41,15 @@ The HTTP server can:
 - For each, either display a description, or the form itself
 - For each, compute a result and display it (although a bit crudely)
 
+Concrete syntax:
+
+- Most of the examples below are hard-coded expressions in `forming-example.hs`
+  but I'm trying to provide a concrete syntax
+- Some example files are in `examples/` and they can be used by the
+  `forming.hs` program
+- That program requires the
+  [`syntactical`](https://github.com/noteed/syntactical) library
+
 
 # Development
 
@@ -154,6 +163,13 @@ Error (AssertionIntError (GreaterThan 1))
 $ runghc bin/play.hs --set e 2 r
 Input "e" (Int 2)
 Result (Int 2)
+```
+
+Concrete syntax:
+
+```
+$ runghc -i../design-system -i../syntactical bin/forming.hs examples/trivial-1.fg
+1
 ```
 
 
