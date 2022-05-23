@@ -70,6 +70,19 @@ $ runghc -i../design-system bin/run-tests.hs
 
 # Example usage
 
+It's possible to run Forming as a server:
+
+```
+$ nix-shell
+$ ./run-server.sh
+```
+
+Or as a command-line tool:
+
+```
+$ runghc -i../design-system bin/forming-examples.hs --help
+```
+
 ```
 $ runghc -i../design-system bin/forming-examples.hs trivial-1
 1

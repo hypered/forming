@@ -1,5 +1,5 @@
 -- This single-computation script is kept as an example. Other exemples are in
--- the mulitple-computations script forming-examples.hs.
+-- the multiple-computations `forming-examples.hs` script.
 module Main where
 
 import Forming

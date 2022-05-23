@@ -1,3 +1,6 @@
+-- This multiple-computations script demonstrates multiple hard-coded
+-- computations, run with `defaultMain`. See `add.hs` for a single-computation
+-- script using `defaultMainOne` instead.
 module Main where
 
 import Forming
