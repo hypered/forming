@@ -1,14 +1,13 @@
 # Forming
 
 Forming is an attempt to make it easy to describe user interfaces to collect
-data. These can be for insantance HTML forms or command-line interfaces.
+data. These can be for instance HTML forms or command-line interfaces.
 
-It has some ressemblance with Publicodes, which is based on YAML and
-implemented in TypeScript:
-https://github.com/betagouv/mon-entreprise/publicodes.
+It has some resemblance with Publicodes, which is based on YAML and implemented
+in TypeScript: https://github.com/betagouv/mon-entreprise/publicodes.
 
 The main idea of Forming is that it uses an AST to describe computations
-similar to a simple expression language (addition, if-then-else expressions,
+similar to a simple expression language (additions, if-then-else expressions,
 ...) with two important things:
 
 - Computed values can be objects, which thus can represent a filled form.
@@ -19,16 +18,16 @@ This means the following: a form is a simple lazily evaluated expression that
 returns a structured representation of some of its variables, together with
 unset variables, which thus can be required and given as needed.
 
-Computations can be used to describe payrolls, but also to implement business
-rules regarding e.g. the creation of contract (e.g. what VAT rate can be used,
-if a risk declaration is required, ...).
+Computations can be used to describe e.g. payrolls, but also to implement
+business rules regarding e.g. the creation of contracts (e.g. what VAT rate can
+be used, if a risk declaration is required, ...).
 
 
 # Features
 
 The CLIs produced with Forming:
 
-- Can represent simple computation (additions, if-then-else expressions)
+- Can represent simple computations (additions, if-then-else expressions)
 - Can represent forms by "computing" an object (i.e. a dict, or map)
 - User inputs can be given by `--set` arguments or as JSON with `--json`
 - Can list the rules involved in a computation
@@ -45,7 +44,7 @@ I currently use a Nix shell provided by `shell.nix`:
 $ nix-shell
 ```
 
-I also need to bring code from the `design-system` repository. So e.g. when
+I also need to bring code from my `design-system` repository. So e.g. when
 using `runghc`:
 
 ```
@@ -102,7 +101,7 @@ Input "e" (Int 4)
 Result (Int 4)
 ```
 
-In the following example, if `i` is `True`, the value is taken from `a`, which
+In the following examples, if `i` is `True`, the value is taken from `a`, which
 is 5. But if it is set to `False`, the value comes from `e`, which is unset and
 thus must be set.
 
