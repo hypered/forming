@@ -329,10 +329,6 @@ data Result = Result Syntax | UnsetVariables [String] | Error [String] Evaluatio
 data Input = Input String Syntax
   deriving Show
 
-isUnset :: Rule -> Bool
-isUnset (Rule _ (Unset _)) = True
-isUnset _ = False
-
 isNamedRule (Rule _ _) = True
 isNamedRule _ = False
 
