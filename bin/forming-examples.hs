@@ -26,10 +26,17 @@ main = defaultMain
       , Rule "a" (Unset Nothing)
       ]
   , Computation
-      "annotate-a"
-      "Compute a int user input."
+      "annotate-int"
+      "Compute an int user input."
       "value"
       [ Rule "value" (Exp (Annotation (Name "a") TInt))
+      , Rule "a" (Unset Nothing)
+      ]
+  , Computation
+      "annotate-decimal"
+      "Compute a decimal user input."
+      "value"
+      [ Rule "value" (Exp (Annotation (Name "a") TDecimal))
       , Rule "a" (Unset Nothing)
       ]
   , Computation
