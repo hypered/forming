@@ -134,16 +134,20 @@ stringError err = case err of
 
 --------------------------------------------------------------------------------
 -- | This assemble inputs but also return an optional name to be evaluated.
-makeInputs :: [String] -> [Input] -> Either String (Maybe String, [Input])
-makeInputs ("--set" : var : val : rest) is =
-  makeInputs rest (is ++ [Input var $ parseInput val])
-makeInputs ["--set"] _ =
+-- The first argument is a list of input rules (i.e. Unsets). Those are used
+-- to possibly give a type for ambiguous inputs (e.g. 10 can be both an int and
+-- a decimal).
+makeInputs :: [(Rule, Maybe Type)] -> [String] -> [Input] -> Either String (Maybe String, [Input])
+makeInputs unsets ("--set" : var : val : rest) is =
+  let mtype = lookupType var unsets
+  in makeInputs unsets rest (is ++ [Input var $ parseInput mtype val])
+makeInputs _ ["--set"] _ =
   Left "--set expects two arguments (none given here)"
-makeInputs ["--set", _] _ =
+makeInputs _ ["--set", _] _ =
   Left "--set expects two arguments (only one given here)"
-makeInputs [name] is = Right (Just name, is)
-makeInputs [] is = Right (Nothing, is)
-makeInputs rest _ =
+makeInputs _ [name] is = Right (Just name, is)
+makeInputs _ [] is = Right (Nothing, is)
+makeInputs _ rest _ =
   Left $ "unexpected arguments: " ++ unwords rest
 
 makeInputsFromJson :: String -> Either String (Maybe String, [Input])
@@ -156,8 +160,17 @@ makeInputsFromJson s = case decode (pack s) :: Maybe Value of
 
 -- TODO Either allow the user to give a type when giving an input, or allow
 -- only inputs whose types are known after calling gatherUnsets.
-parseInput :: String -> Syntax
-parseInput val = case val of
+parseInput :: Maybe Type -> String -> Syntax
+parseInput (Just TBool) "True" = Bool True
+parseInput (Just TBool) "False" = Bool False
+parseInput (Just TInt) val = Int $ read val
+parseInput (Just TDecimal) val = Decimal $ read val
+parseInput (Just TString) val = String val
+-- TODO I think I have some hack that understand a String when a Enum is
+-- expected. So lat's return a String for now, but parseInput should be allowed
+-- to fail (i.e. return an Either).
+parseInput (Just (TEnum _)) val = String val
+parseInput Nothing val = case val of
   _ | not (null val) && all (`elem` ("0123456789" :: String)) val ->
     Int $ read val
   _ | not (null val) && all (`elem` ("0123456789." :: String)) val ->
@@ -165,6 +178,7 @@ parseInput val = case val of
   "True" -> Bool True
   "False" -> Bool False
   _ -> String val
+parseInput x _ = error (show x)
 
 parseInput' (A.Bool x) = Bool x
 parseInput' (A.Number x) = case floatingOrInteger x of

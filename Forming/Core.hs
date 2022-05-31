@@ -4,6 +4,7 @@
 
 module Forming.Core where
 
+import Control.Monad (join)
 import Data.List (deleteFirstsBy, intercalate, nub, nubBy)
 import Data.Maybe (isJust)
 
@@ -335,3 +336,8 @@ isNamedRule _ = False
 isTypeMismatch :: Result -> Bool
 isTypeMismatch (Error _ (TypeMismatch _ _)) = True
 isTypeMismatch _ = False
+
+
+--------------------------------------------------------------------------------
+lookupType name rules = join $ lookup name rules'
+  where rules' = map (\(rule, mtype) -> (rName rule, mtype)) rules

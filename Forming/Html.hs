@@ -47,7 +47,7 @@ pageComputationDoc namespace c@Computation{..} = do
   H.code . H.pre $
     case gatherUnsets Nothing cMain cRules of
       Left err -> error (show err)
-      Right rules -> mapM_ (H.toHtml . (++ "\n") . show) rules
+      Right unsets -> mapM_ (H.toHtml . (++ "\n") . show) unsets
   H.div $ do
     "Rules:"
   H.code . H.pre $
@@ -66,7 +66,7 @@ htmlComputation Computation{..} = do
       H.h2 $ H.toHtml cName
       case gatherUnsets Nothing cMain cRules of
         Left err -> error (show err)
-        Right rules -> mapM_ htmlInput rules
+        Right unsets -> mapM_ htmlInput unsets
     H.div ! A.class_ "flex justify-between" $ do
       H.div ! A.class_ "bg-white b--black black ph3 pb4 pt3 tl w-100 dib no-underline ba bw1"
           $ ""

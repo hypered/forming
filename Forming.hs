@@ -98,5 +98,15 @@ run c@Computation{..} args = do
     [name, "--json", s] -> printOutputAsJson $ compute c $
       right (first (const (Just name))) $ makeInputsFromJson s
 
-    -- Parse inputs of the form `--set a 1` and evaluate one rule.
-    rest -> printOutput $ compute c $ makeInputs rest []
+    -- Parse inputs of the form `--set a 1` (with makeInputs) and evaluate one
+    -- rule. Before creating the inputs, gatherUnsets is called to compute
+    -- types, which are necessary to correctly parse inputs.
+    -- TODO Note that cMain and the name given by makeInputs can be different.
+    -- So it is possible that `gatherUnsets` will infer a type (or Nothing)
+    -- differently that what `compute` will use.
+    -- Maybe I should have a check to make sure that all the rules together
+    -- are consistent, and maybe I should force that every inputs are typed.
+    -- This is not the case in e.g. the "trivial-a" example.
+    rest -> case gatherUnsets Nothing cMain cRules of
+      Right unsets -> printOutput $ compute c $ makeInputs unsets rest []
+      Left err -> print err

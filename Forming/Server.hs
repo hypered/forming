@@ -185,12 +185,15 @@ formDocPage namespace c = writeLazyText . renderHtml $ document "Reesd" $
 submitHandler :: Computation -> Handler App App ()
 submitHandler c = do
   logError "Handling .../+submit..."
-  params <- getParams
-  writeLazyText . renderHtml $ document "Reesd" $ do
-    H.header navigationReesd
-    H.code . H.toHtml $ cName c
-    H.code . H.toHtml $ show params
-    runWithInputs' c $ makeInputsFromParams params
+  case gatherUnsets Nothing (cMain c) (cRules c) of
+    Left err -> error (show err)
+    Right unsets -> do
+      params <- getParams
+      writeLazyText . renderHtml $ document "Reesd" $ do
+        H.header navigationReesd
+        H.code . H.toHtml $ cName c
+        H.code . H.toHtml $ show params
+        runWithInputs' c $ makeInputsFromParams unsets params
 
 -- Same as runWithInputs but produces HTML instead of strings to stdout.
 runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
@@ -215,10 +218,12 @@ runWithInputs' Computation{..} mis = case mis of
 -- I guess I can use `head` here since I assume getParams returns a list only
 -- when there is at least one Param. We ignore empty strings as they are
 -- submitted when users don't do anything.
-makeInputsFromParams params = Right (Nothing,
+makeInputsFromParams unsets params = Right (Nothing,
   filter (not . isEmptyString) $
   map
-    (\(k, v) -> Input (B.unpack k) (parseInput . B.unpack $ head v))
+    (\(k, v) ->
+      let mtype = lookupType (B.unpack k) unsets
+      in Input (B.unpack k) (parseInput mtype . B.unpack $ head v))
     (M.toList params))
 
 isEmptyString (Input _ (String [])) = True
