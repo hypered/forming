@@ -263,16 +263,16 @@ checkType e a _x = case (_x, a) of
   (Object _, TObject) -> Nothing
   _ -> case e of
     Name name -> Just (TypeMismatch (Just name)
-      ("Expected an " ++ t ++ ", got " ++ show _x))
-    _ -> Just (TypeMismatch Nothing ("Expected an " ++ t ++ ", got " ++ show _x))
+      ("Expected " ++ t ++ ", got " ++ show _x))
+    _ -> Just (TypeMismatch Nothing ("Expected " ++ t ++ ", got " ++ show _x))
   where
   t = case a of
-    TBool -> "Bool"
-    TInt -> "Int"
-    TDecimal -> "Decimal"
-    TString -> "String"
+    TBool -> "a Bool"
+    TInt -> "an Int"
+    TDecimal -> "a Decimal"
+    TString -> "a String"
     TEnum xs -> intercalate "|" xs
-    TObject -> "Object"
+    TObject -> "an Object"
 
 
 --------------------------------------------------------------------------------
