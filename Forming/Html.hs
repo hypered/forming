@@ -97,6 +97,7 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
   case t of
     TBool -> "Bool"
     TInt -> "Int"
+    TDecimal -> "Decimal"
     TString -> "String"
     TEnum xs -> intercalate "|" xs
     TObject -> "Object"
