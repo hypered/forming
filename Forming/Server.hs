@@ -100,7 +100,6 @@ appInit cs =
       , ("/static/respan/runmain.js", serveFile' "static/respan/runmain.js")
 
       , ( "/checks/about", ifTop $ method GET checksAbout)
-      , ( "/checks/sba/page", ifTop $ method GET checksSba)
       ]
 
     return App
@@ -240,14 +239,6 @@ checksAbout :: Handler App App ()
 checksAbout = do
   logError "Handling GET /checks/about..."
   writeText "This is forming-server."
-
-
-----------------------------------------------------------------------
--- | This route should be protected by auth_request in Nginx.
-checksSba :: Handler App App ()
-checksSba = do
-  logError "Handling GET /checks/sba..."
-  writeText "This page should be visible only when logged in."
 
 
 ----------------------------------------------------------------------
