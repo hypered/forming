@@ -15,9 +15,9 @@ data Syntax =
   -- Type-checking is currently done during evaluation, instead as a real
   -- type-checking phase. I.e. this acts like a dynamically-typed language.
   | Annotation Syntax Type
-  | Assert Syntax Syntax -- ^ Returns the first exp, provided the second is True.
     -- Is it really useful to have assertions on whole Syntax, instead of Unset
-    -- values ?
+    -- values, or just Name ?
+  | Assert Syntax Syntax -- ^ Returns the first exp, provided the second is True.
   | AssertInt Syntax AssertionInt
 
   | List [Syntax]
