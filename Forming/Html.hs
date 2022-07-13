@@ -73,7 +73,27 @@ htmlComputation Computation{..} = do
       H.button ! A.class_ "bg-black b--black white ph3 pb4 pt3 tl w-100 button-reset ba bw1" $ "Submit →"
 
 htmlInput :: (Rule, Maybe Type) -> Html
-htmlInput (Rule{..}, mtype) = do
+htmlInput (Unset{..}, mtype) = do
+  let iden = H.toValue rName -- TODO rules can have spaces or quotes
+  H.div ! A.class_ "mv3" $
+    H.div ! A.class_ "mb3" $ do
+      H.label ! A.class_ "db fw6 mv1"
+              ! A.for iden $
+        H.span $ do
+          H.toHtml rName
+          case mtype of
+            Nothing -> return ()
+            Just t -> do
+              " "
+              htmlType t
+      H.input ! A.class_ "input-reset bl-0 bt-0 br-0 bb bg-near-white pv2 ph2 w-100 outline-0 border-box"
+              ! A.label iden
+              ! A.name iden
+              ! A.id iden
+              ! A.type_ "text"
+              ! A.placeholder ""
+-- TODO This is the same code as above.
+htmlInput (Binding{..}, mtype) = do
   let iden = H.toValue rName -- TODO rules can have spaces or quotes
   H.div ! A.class_ "mv3" $
     H.div ! A.class_ "mb3" $ do

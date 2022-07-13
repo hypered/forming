@@ -15,9 +15,9 @@ import Forming.Type
 --------------------------------------------------------------------------------
 evaluate :: [String] -> String -> [Rule] -> [Input] -> Result
 evaluate stack name rs is = case filter ((== name) . rName) rs' of
-  [r] -> case rFormula r of
+  [r] -> case r of
 
-    Unset mtype -> case lookupInput (rName r) is of
+    Unset _ mtype -> case lookupInput (rName r) is of
       -- TODO Ruleout Syntax that are not "Value"
       Just (Name _) -> error "Inputs cannot be a Name."
       Just e -> case mtype of
@@ -27,7 +27,7 @@ evaluate stack name rs is = case filter ((== name) . rName) rs' of
         Nothing -> Result e
       Nothing -> UnsetVariables [rName r]
 
-    Exp e -> reduce (name : stack) e rs' is
+    Binding _ e -> reduce (name : stack) e rs' is
 
   [] -> Error [name] (NoSuchRule name)
 
@@ -185,10 +185,10 @@ lookupInput name is = lookup name is'
 gatherUnsets :: Maybe Type -> String -> [Rule]
   -> Either EvaluationError [(Rule, Maybe Type)]
 gatherUnsets mtype name rs = case filter ((== name) . rName) rs' of
-  [r] -> case rFormula r of
-    Unset Nothing -> Right [(r, mtype)]
-    Unset mtype' -> Right [(r, mtype')]
-    Exp e -> gatherUnsets' mtype rs' e
+  [r] -> case r of
+    Unset _ Nothing -> Right [(r, mtype)]
+    Unset _ mtype' -> Right [(r, mtype')]
+    Binding _ e -> gatherUnsets' mtype rs' e
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
 
@@ -300,11 +300,9 @@ data Computation = Computation
 -- It can be an unnamed (naked) expression, to allow Forming to be used as a
 -- simple calculator.
 data Rule =
-    Rule { rName :: String , rFormula :: Formula }
+    Unset { rName :: String, rType :: Maybe Type }
+  | Binding { rName :: String , rExpression :: Syntax }
   | Naked { rExpression :: Syntax }
-  deriving (Eq, Show)
-
-data Formula = Unset (Maybe Type) | Exp Syntax
   deriving (Eq, Show)
 
 data EvaluationError =
@@ -330,7 +328,8 @@ data Result = Result Syntax | UnsetVariables [String] | Error [String] Evaluatio
 data Input = Input String Syntax
   deriving Show
 
-isNamedRule (Rule _ _) = True
+isNamedRule (Unset _ _) = True
+isNamedRule (Binding _ _) = True
 isNamedRule _ = False
 
 isTypeMismatch :: Result -> Bool

@@ -27,154 +27,154 @@ baseTree = Tasty.testGroup "Base tests"
       @?= Error ["a"] (NoSuchRule "a")
 
   , HUnit.testCase "Error reporting (no such rule - 2)" $
-      eval "a" [Rule "b" (Exp (Int 5))]
+      eval "a" [Binding "b" (Int 5)]
       @?= Error ["a"] (NoSuchRule "a")
 
   , HUnit.testCase "Error reporting (multiple rules)" $
-      eval "a" [Rule "a" (Exp (Int 5)), Rule "a" (Exp (Int 6))]
+      eval "a" [Binding "a" (Int 5), Binding "a" (Int 6)]
       @?= Error ["a"] (MultipleRules "a")
 
   , HUnit.testCase "Error reporting (unset variable)" $
-      eval "a" [Rule "a" (Unset Nothing)]
+      eval "a" [Unset "a" Nothing]
       @?= UnsetVariables ["a"]
 
 
   , HUnit.testCase "a = True" $
-      eval "a" [Rule "a" (Exp (Bool True))]
+      eval "a" [Binding "a" (Bool True)]
       @?= Result (Bool True)
 
   , HUnit.testCase "a = False" $
-      eval "a" [Rule "a" (Exp (Bool False))]
+      eval "a" [Binding "a" (Bool False)]
       @?= Result (Bool False)
 
   , HUnit.testCase "a = 5" $
-      eval "a" [Rule "a" (Exp (Int 5))]
+      eval "a" [Binding "a" (Int 5)]
       @?= Result (Int 5)
 
   , HUnit.testCase "a = \"x\"" $
-      eval "a" [Rule "a" (Exp (Decimal 3500))]
+      eval "a" [Binding "a" (Decimal 3500)]
       @?= Result (Decimal (read "3500.00"))
 
   , HUnit.testCase "a = \"x\"" $
-      eval "a" [Rule "a" (Exp (String "x"))]
+      eval "a" [Binding "a" (String "x")]
       @?= Result (String "x")
 
 
   , HUnit.testCase "Annotation Bool - Bool" $
-      eval "a" [Rule "a" (Exp (Annotation (Bool True) TBool))]
+      eval "a" [Binding "a" (Annotation (Bool True) TBool)]
       @?= Result (Bool True)
 
   , HUnit.testCase "Annotation Int - Bool" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Int 4) TBool))]
+        eval "a" [Binding "a" (Annotation (Int 4) TBool)]
 
   , HUnit.testCase "Annotation String - Bool" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (String "x") TBool))]
+        eval "a" [Binding "a" (Annotation (String "x") TBool)]
 
 
   , HUnit.testCase "Annotation Bool - Int" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Bool True) TInt))]
+        eval "a" [Binding "a" (Annotation (Bool True) TInt)]
 
   , HUnit.testCase "Annotation Int - Int" $
-      eval "a" [Rule "a" (Exp (Annotation (Int 4) TInt))]
+      eval "a" [Binding "a" (Annotation (Int 4) TInt)]
       @?= Result (Int 4)
 
   , HUnit.testCase "Annotation String - Int" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (String "x") TInt))]
+        eval "a" [Binding "a" (Annotation (String "x") TInt)]
 
 
   , HUnit.testCase "Annotation Bool - String" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Bool True) TString))]
+        eval "a" [Binding "a" (Annotation (Bool True) TString)]
 
   , HUnit.testCase "Annotation Int - String" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Int 4) TString))]
+        eval "a" [Binding "a" (Annotation (Int 4) TString)]
 
   , HUnit.testCase "Annotation String - String" $
-      eval "a" [Rule "a" (Exp (Annotation (String "x") TString))]
+      eval "a" [Binding "a" (Annotation (String "x") TString)]
       @?= Result (String "x")
 
 
   , HUnit.testCase "Annotation Bool - Enum" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Bool True) (TEnum ["x", "y"])))]
+        eval "a" [Binding "a" (Annotation (Bool True) (TEnum ["x", "y"]))]
 
   , HUnit.testCase "Annotation Int - Enum" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (Int 4) (TEnum ["x", "y"])))]
+        eval "a" [Binding "a" (Annotation (Int 4) (TEnum ["x", "y"]))]
 
   , HUnit.testCase "Annotation String - Enum" $
-      eval "a" [Rule "a" (Exp (Annotation (String "x") (TEnum ["x", "y"])))]
+      eval "a" [Binding "a" (Annotation (String "x") (TEnum ["x", "y"]))]
       @?= Result (String "x")
 
   , HUnit.testCase "Annotation String - Enum (mismatch)" $
       assertBool "expected type-mismatch" $ isTypeMismatch $
-        eval "a" [Rule "a" (Exp (Annotation (String "x") (TEnum ["y", "z"])))]
+        eval "a" [Binding "a" (Annotation (String "x") (TEnum ["y", "z"]))]
 
 
   , HUnit.testCase "Annotated unset variable" $
-      evaluate [] "a" [Rule "a" (Unset Nothing)] [Input "a" (Bool True)]
+      evaluate [] "a" [Unset "a" Nothing] [Input "a" (Bool True)]
       @?= Result (Bool True)
 
   , HUnit.testCase "Annotated unset variable" $
-      evaluate [] "a" [Rule "a" (Unset (Just TBool))] [Input "a" (Bool True)]
+      evaluate [] "a" [Unset "a" (Just TBool)] [Input "a" (Bool True)]
       @?= Result (Bool True)
 
   , HUnit.testCase "Annotated unset variable" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
-        evaluate [] "a" [Rule "a" (Unset (Just TInt))] [Input "a" (Bool True)]
+        evaluate [] "a" [Unset "a" (Just TInt)] [Input "a" (Bool True)]
 
 
   , HUnit.testCase "TODO" $
-      eval "v" [Rule "v" (Exp (Union (Object []) (Object [("a", Int 1)])))]
+      eval "v" [Binding "v" (Union (Object []) (Object [("a", Int 1)]))]
       @?= Result (Object [("a", Int 1)])
 
   , HUnit.testCase "TODO" $
-      eval "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("a", Int 2)])))]
+      eval "v" [Binding "v" (Union (Object [("a", Int 1)]) (Object [("a", Int 2)]))]
       @?= Result (Object [("a", Int 2)])
 
   , HUnit.testCase "TODO" $
-      eval "v" [Rule "v" (Exp (Union (Object [("a", Int 1)]) (Object [("b", Int 2)])))]
+      eval "v" [Binding "v" (Union (Object [("a", Int 1)]) (Object [("b", Int 2)]))]
       @?= Result (Object [("a", Int 1), ("b", Int 2)])
 
   , HUnit.testCase "TODO" $
       eval "v"
-        [ Rule "v" (Exp (Union (Object [("a", Int 1)]) (Names ["b"])))
-        , Rule "b" (Exp (Int 2))
+        [ Binding "v" (Union (Object [("a", Int 1)]) (Names ["b"]))
+        , Binding "b" (Int 2)
         ]
       @?= Result (Object [("a", Int 1), ("b", Int 2)])
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (Int 1) (Int 1)))]
+      eval "w" [Binding "w" (Equal (Int 1) (Int 1))]
       @?= Result (Bool True)
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (Int 1) (Int 2)))]
+      eval "w" [Binding "w" (Equal (Int 1) (Int 2))]
       @?= Result (Bool False)
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (Bool True) (Bool True)))]
+      eval "w" [Binding "w" (Equal (Bool True) (Bool True))]
       @?= Result (Bool True)
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (Bool True) (Bool False)))]
+      eval "w" [Binding "w" (Equal (Bool True) (Bool False))]
       @?= Result (Bool False)
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (String "a") (String "a")))]
+      eval "w" [Binding "w" (Equal (String "a") (String "a"))]
       @?= Result (Bool True)
 
   , HUnit.testCase "TODO" $
-      eval "w" [Rule "w" (Exp (Equal (String "a") (String "b")))]
+      eval "w" [Binding "w" (Equal (String "a") (String "b"))]
       @?= Result (Bool False)
 
   , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
-        eval "w" [Rule "w" (Exp (Equal (Bool True) (Int 1)))]
+        eval "w" [Binding "w" (Equal (Bool True) (Int 1))]
   ]
 
 assortedTree :: TestTree
@@ -219,31 +219,31 @@ assortedTree = Tasty.testGroup "Assorted tests"
       eval "h" rules @?= Result (Int 17)
 
   , HUnit.testCase "TODO" $
-      eval "i" [Rule "i" (Exp $ Bool True)] @?= Result (Bool True)
+      eval "i" [Binding "i" (Bool True)] @?= Result (Bool True)
 
   , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
-        eval "j" [Rule "j" (Exp $ Add (Int 1) (Bool True))]
+        eval "j" [Binding "j" $ Add (Int 1) (Bool True)]
 
   , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
-        eval "j" [Rule "j" (Exp $ Add (Bool True) (Int 1))]
+        eval "j" [Binding "j" $ Add (Bool True) (Int 1)]
 
   , HUnit.testCase "TODO" $
-      eval "k" [Rule "k" (Exp $ LessThan (Int 1) (Int 2))]
+      eval "k" [Binding "k" $ LessThan (Int 1) (Int 2)]
       @?= Result (Bool True)
 
   , HUnit.testCase "TODO" $
-      eval "k" [Rule "k" (Exp $ LessThan (Int 2) (Int 2))]
+      eval "k" [Binding "k" $ LessThan (Int 2) (Int 2)]
       @?= Result (Bool False)
 
   , HUnit.testCase "TODO" $
-      eval "k" [Rule "k" (Exp $ Cond (Bool True) (Int 1) (Int 2))]
+      eval "k" [Binding "k" $ Cond (Bool True) (Int 1) (Int 2)]
       @?= Result (Int 1)
 
   , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
-        eval "j" [Rule "j" (Exp $ Cond (Int 0) (Int 1) (Int 2))]
+        eval "j" [Binding "j" $ Cond (Int 0) (Int 1) (Int 2)]
 
   , HUnit.testCase "TODO" $
       eval "l" rules @?= UnsetVariables ["i"]
@@ -271,42 +271,42 @@ rules =
   , rule_18
   ]
 
-rule_1 = Rule "a" (Exp (Int 5))
+rule_1 = Binding "a" (Int 5)
 
-rule_2 = Rule "b" (Exp (Int 6))
+rule_2 = Binding "b" (Int 6)
 
-rule_3 = Rule "c" (Exp (Name "b"))
+rule_3 = Binding "c" (Name "b")
 
-rule_4 = Rule "d" (Exp (Name "c"))
+rule_4 = Binding "d" (Name "c")
 
-rule_5 = Rule "e" (Unset Nothing)
+rule_5 = Unset "e" Nothing
 
 -- Reference an unset rule.
-rule_6 = Rule "f" (Exp (Name "e"))
+rule_6 = Binding "f" (Name "e")
 
-rule_7add = Rule "g-add" (Exp (Add (Name "a") (Name "b")))
-rule_7sub = Rule "g-sub" (Exp (Sub (Name "a") (Name "b")))
-rule_7mul = Rule "g-mul" (Exp (Mul (Name "a") (Name "b")))
-rule_7div = Rule "g-div" (Exp (Div (Name "a") (Name "b")))
+rule_7add = Binding "g-add" (Add (Name "a") (Name "b"))
+rule_7sub = Binding "g-sub" (Sub (Name "a") (Name "b"))
+rule_7mul = Binding "g-mul" (Mul (Name "a") (Name "b"))
+rule_7div = Binding "g-div" (Div (Name "a") (Name "b"))
 
-rule_8 = Rule "h" (Exp (Sum [Name "a", Name "b", Name "c"]))
+rule_8 = Binding "h" (Sum [Name "a", Name "b", Name "c"])
 
-rule_9 = Rule "i" (Unset Nothing)
+rule_9 = Unset "i" Nothing
 
-rule_10 = Rule "k" (Exp (Cond (Name "i") (Int 1) (Int 2)))
+rule_10 = Binding "k" (Cond (Name "i") (Int 1) (Int 2))
 
-rule_11 = Rule "l" (Exp (Cond (Name "i") (Name "a") (Name "e")))
+rule_11 = Binding "l" (Cond (Name "i") (Name "a") (Name "e"))
 
-rule_12 = Rule "m" (Exp (Object [("a", Int 1)]))
+rule_12 = Binding "m" (Object [("a", Int 1)])
 
-rule_13 = Rule "n" (Exp (Object [("a", Int 1), ("b", Int 2)]))
+rule_13 = Binding "n" (Object [("a", Int 1), ("b", Int 2)])
 
-rule_14 = Rule "o" (Exp (Names ["a", "b"]))
+rule_14 = Binding "o" (Names ["a", "b"])
 
-rule_15 = Rule "p" (Exp (List [Int 1, Bool True, Name "a"]))
+rule_15 = Binding "p" (List [Int 1, Bool True, Name "a"])
 
-rule_16 = Rule "q" (Exp (String "a"))
+rule_16 = Binding "q" (String "a")
 
-rule_17 = Rule "r" (Exp (AssertInt (Name "e") (GreaterThan 1)))
+rule_17 = Binding "r" (AssertInt (Name "e") (GreaterThan 1))
 
-rule_18 = Rule "cycle" (Exp (Name "cycle")) -- TODO Find cycles.
+rule_18 = Binding "cycle" (Name "cycle") -- TODO Find cycles.

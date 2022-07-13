@@ -9,7 +9,7 @@
 # the corresponding .mix file will be missing, causing errors later when
 # invoking `hpc report` or `hpc markup`.
 echo "Building bin/forming-examples..."
-./clean.sh
+./scripts/clean.sh
 ghc --make -fhpc -i../design-system/ bin/forming-examples.hs
 
 # With the HPCTIXDIR environment variable set, an HPC-instrumented process
