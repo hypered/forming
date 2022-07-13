@@ -143,4 +143,34 @@ main = defaultMain
            (Mul (Name "gross salary") (Decimal (read "1.08"))))
         )
       ]
+  , Computation
+      "signup"
+      "A sign up form."
+      "form"
+      [ Rule "username" (Unset Nothing)
+      , Rule "email address" (Unset Nothing)
+      , Rule "password" (Unset Nothing)
+
+      , Rule "form" (Exp
+          (Object
+            [ ("username", Annotation (Name "username") TString)
+            , ("email address", Annotation (Name "email address") TString)
+            , ("password", Annotation (Name "password") TString) --TODO TPassword
+            ])
+        )
+      ]
+  , Computation
+      "login"
+      "A login form."
+      "form"
+      [ Rule "username" (Unset Nothing)
+      , Rule "password" (Unset Nothing)
+
+      , Rule "form" (Exp
+          (Object
+            [ ("username", Annotation (Name "username") TString)
+            , ("password", Annotation (Name "password") TString) --TODO TPassword
+            ])
+        )
+      ]
   ]
