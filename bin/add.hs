@@ -13,7 +13,7 @@ main = defaultMainOne $
     "add"
     "Compute the addition of two integers a and b."
     "value"
-    [ Rule "value" (Exp (Add (Name "a") (Name "b")))
-    , Rule "a" (Unset Nothing)
-    , Rule "b" (Unset Nothing)
+    [ Binding "value" (Add (Name "a") (Name "b"))
+    , Unset "a" Nothing
+    , Unset "b" Nothing
     ]
