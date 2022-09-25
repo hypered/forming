@@ -129,50 +129,50 @@ baseTree = Tasty.testGroup "Base tests"
         evaluate [] "a" [Unset "a" (Just TInt)] [Input "a" (Bool True)]
 
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Union, empty and 1 field" $
       eval "v" [Binding "v" (Union (Object []) (Object [("a", Int 1)]))]
       @?= Result (Object [("a", Int 1)])
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Union, same field (right biased)" $
       eval "v" [Binding "v" (Union (Object [("a", Int 1)]) (Object [("a", Int 2)]))]
       @?= Result (Object [("a", Int 2)])
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Union, 1 field and 1 field" $
       eval "v" [Binding "v" (Union (Object [("a", Int 1)]) (Object [("b", Int 2)]))]
       @?= Result (Object [("a", Int 1), ("b", Int 2)])
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Union, with \"Names\"" $
       eval "v"
         [ Binding "v" (Union (Object [("a", Int 1)]) (Names ["b"]))
         , Binding "b" (Int 2)
         ]
       @?= Result (Object [("a", Int 1), ("b", Int 2)])
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Integer equality" $
       eval "w" [Binding "w" (Equal (Int 1) (Int 1))]
       @?= Result (Bool True)
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Integer equality" $
       eval "w" [Binding "w" (Equal (Int 1) (Int 2))]
       @?= Result (Bool False)
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Boolean equality" $
       eval "w" [Binding "w" (Equal (Bool True) (Bool True))]
       @?= Result (Bool True)
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "Boolean equality" $
       eval "w" [Binding "w" (Equal (Bool True) (Bool False))]
       @?= Result (Bool False)
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "String equality" $
       eval "w" [Binding "w" (Equal (String "a") (String "a"))]
       @?= Result (Bool True)
 
-  , HUnit.testCase "TODO" $
+  , HUnit.testCase "String equality" $
       eval "w" [Binding "w" (Equal (String "a") (String "b"))]
       @?= Result (Bool False)
 
-  , HUnit.testCase "TODO" $ assertBool "expected type-mismatch" $
+  , HUnit.testCase "Equality, type mismatch" $ assertBool "expected type-mismatch" $
       isTypeMismatch $
         eval "w" [Binding "w" (Equal (Bool True) (Int 1))]
   ]
