@@ -3,7 +3,6 @@
 module Main where
 
 import Forming
-import Forming.Syntax
 
 
 --------------------------------------------------------------------------------

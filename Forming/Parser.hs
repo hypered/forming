@@ -1,9 +1,13 @@
+-- | This module implements a concrete syntax for Forming. This makes it
+-- possible to have Forming scripts and run or serve them using `forming.hs`
+-- (as opposed to use Forming as a library with hard-coded Forming
+-- expressions).
 {-# Language OverloadedStrings #-}
 module Forming.Parser where
 
 import Text.Syntactical hiding (Token)
 
-import Forming
+import Forming.Core
 import Forming.Lexer (Token(..))
 import Forming.Syntax (Syntax)
 
