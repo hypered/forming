@@ -84,8 +84,10 @@ Tests can be run with the following command:
 $ runghc -i../design-system bin/run-tests.hs
 ```
 
+They can be read to learn the behavior of Forming.
 
-# Example usage
+
+# Example usage (binary built using the library)
 
 It's possible to run Forming as a server:
 
@@ -94,7 +96,7 @@ $ nix-shell
 $ ./run-server.sh
 ```
 
-The current homepage at `/` is re-used from another project. Insteadm navigate
+The current homepage at `/` is re-used from another project. Instead, navigate
 to `/noteed` to see a list of forms.
 
 The same program can also be used as a command-line tool:
@@ -122,50 +124,8 @@ $ runghc -i../design-system bin/forming-examples.hs trivial-a --json '{"a": 1}'
 1
 ```
 
-```
-$ runghc bin/play.hs a
-Result (Int 5)
 
-$ runghc bin/play.hs e
-UnsetVariables ["e"]
-
-$ runghc bin/play.hs --set e 4 e
-Input "e" (Int 4)
-Result (Int 4)
-```
-
-In the following examples, if `i` is `True`, the value is taken from `a`, which
-is 5. But if it is set to `False`, the value comes from `e`, which is unset and
-thus must be set.
-
-```
-$ runghc bin/play.hs --set i True l
-Input "i" (Bool True)
-Result (Int 5)
-
-$ runghc bin/play.hs --set i False l
-Input "i" (Bool False)
-UnsetVariables ["e"]
-
-$ runghc bin/play.hs --set i False --set e 4 l
-Input "i" (Bool False)
-Input "e" (Int 4)
-Result (Int 4)
-```
-
-Assertions:
-
-```
-$ runghc bin/play.hs --set e 1 r
-Input "e" (Int 1)
-Error (AssertionIntError (GreaterThan 1))
-
-$ runghc bin/play.hs --set e 2 r
-Input "e" (Int 2)
-Result (Int 2)
-```
-
-Concrete syntax:
+# Example usage (concrete syntax)
 
 ```
 $ runghc -i../design-system -i../syntactical bin/forming.hs examples/trivial-1.fg
