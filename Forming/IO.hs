@@ -22,9 +22,9 @@ import Forming.Type
 
 
 --------------------------------------------------------------------------------
-compute :: Computation -> Either String (Maybe String, [Input]) -> Either String Result
-compute Computation{..} mis = case mis of
-  Right (mname, is) ->
+compute :: Computation -> Maybe String -> Either String [Input] -> Either String Result
+compute Computation{..} mname mis = case mis of
+  Right is ->
     -- Special case for the CLI: if there is only one naked expression,
     -- evaluate it (instead of using named rules).
     case cRules of
@@ -133,28 +133,20 @@ stringError err = case err of
       ++ "must be True"
 
 --------------------------------------------------------------------------------
--- | This assemble inputs but also return an optional name to be evaluated.
--- The first argument is a list of input rules (i.e. Unsets). Those are used
--- to possibly give a type for ambiguous inputs (e.g. 10 can be both an int and
--- a decimal).
-makeInputs :: [(Rule, Maybe Type)] -> [String] -> [Input] -> Either String (Maybe String, [Input])
-makeInputs unsets ("--set" : var : val : rest) is =
+-- | This assemble inputs.  The first argument is a list of input rules (i.e.
+-- Unsets). Those are used to possibly give a type for ambiguous inputs (e.g.
+-- 10 can be both an int and a decimal).
+makeInputs :: [(Rule, Maybe Type)] -> [(String, String)] -> [Input] -> Either String [Input]
+makeInputs unsets ((var, val) : rest) is =
   let mtype = lookupType var unsets
   in makeInputs unsets rest (is ++ [Input var $ parseInput mtype val])
-makeInputs _ ["--set"] _ =
-  Left "--set expects two arguments (none given here)"
-makeInputs _ ["--set", _] _ =
-  Left "--set expects two arguments (only one given here)"
-makeInputs _ [name] is = Right (Just name, is)
-makeInputs _ [] is = Right (Nothing, is)
-makeInputs _ rest _ =
-  Left $ "unexpected arguments: " ++ unwords rest
+makeInputs _ [] is = Right is
 
-makeInputsFromJson :: String -> Either String (Maybe String, [Input])
+makeInputsFromJson :: String -> Either String [Input]
 makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Just (A.Object kvs_) ->
     let kvs = H.toList kvs_
-    in Right (Nothing, map (\(k, v) -> Input (T.unpack k) (parseInput' v)) kvs)
+    in Right $ map (\(k, v) -> Input (T.unpack k) (parseInput' v)) kvs
   Just _ -> Left "input JSON is not an object."
   Nothing -> Left "malformed input JSON."
 

@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-runghc -i../design-system bin/run-tests.hs --hide-successes
+runghc -i../design-system -i../syntactical bin/run-tests.hs --hide-successes

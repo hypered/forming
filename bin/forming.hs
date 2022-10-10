@@ -3,9 +3,12 @@
 {-# Language OverloadedStrings #-}
 module Main where
 
+import qualified Options.Applicative as A
+
+import qualified Forming.Command as Command
 import qualified Forming.Run as Run
 
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = Run.run
+main = A.execParser Command.parserInfo >>= Run.run
