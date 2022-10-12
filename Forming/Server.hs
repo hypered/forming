@@ -64,6 +64,7 @@ _FORMING_SITE_DIR = unsafePerformIO $ getEnv "FORMING_SITE_DIR"
 
 
 ------------------------------------------------------------------------------
+runServer :: [Computation] -> IO ()
 runServer cs = serveSnapletNoArgParsing defaultConfig $ appInit cs
 
 

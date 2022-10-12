@@ -23,6 +23,8 @@ data Command =
   | SExprFile FilePath
   | Serve String
   | ServeFile FilePath
+  | Servant String -- ^ Servant version of Serve.
+  | ServantFile FilePath -- ^ Servant version of ServeFile.
   | Run Run ExprOrFilePath
     -- ^ Mode, and an expression or file to evaluate.
   deriving Show
@@ -34,6 +36,7 @@ data Command' =
   | Run' String Run
     -- ^ Slug of the computation to run, and a mode.
   | Serve'
+  | Servant'
   deriving Show
 
 -- | Defines a mode to run or query a computation.
@@ -98,6 +101,11 @@ parser =
         $ A.progDesc "Serve an expression"
         )
     <> A.command
+        "servant"
+        ( A.info (parserServant <**> A.helper)
+        $ A.progDesc "Serve an expression, using Servant"
+        )
+    <> A.command
         "run"
         ( A.info (parserRun <**> A.helper)
         $ A.progDesc "Run an expression"
@@ -115,6 +123,11 @@ parser' =
         "serve"
         ( A.info ((pure Serve') <**> A.helper)
         $ A.progDesc "Serve an expression"
+        )
+    <> A.command
+        "servant"
+        ( A.info ((pure Servant') <**> A.helper)
+        $ A.progDesc "Serve an expression, using Servant"
         )
     <> A.command
         "run"
@@ -168,6 +181,21 @@ parserServe =
   ( do
       s <- A.argument A.str (A.metavar "EXPR" <> A.help "An expression to serve")
       pure $ Serve s
+  )
+
+parserServant :: A.Parser Command
+parserServant =
+  ( do
+      fp <- A.strOption
+              $  A.long "file"
+              <> A.help "A file to serve"
+              <> A.metavar "FILEPATH"
+      pure $ ServantFile fp
+  )
+  <|>
+  ( do
+      s <- A.argument A.str (A.metavar "EXPR" <> A.help "An expression to serve")
+      pure $ Servant s
   )
 
 parseExrpOrFilePath =

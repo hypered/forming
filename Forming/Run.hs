@@ -30,6 +30,7 @@ import Forming.IO
 import qualified Forming.Lexer as Lexer
 import Forming.Html (pageComputation)
 import qualified Forming.Parser as Parser
+import Forming.Servant (runServant)
 import Forming.Server (runServer)
 
 
@@ -72,6 +73,12 @@ run command = do
       s <- readFile fp
       execute (\c -> runServer [c]) s
 
+    Servant s -> execute (\c -> runServant [c]) s
+
+    ServantFile fp -> do
+      s <- readFile fp
+      execute (\c -> runServant [c]) s
+
     Run r e -> case e of
       ExprString s -> execute (\c -> runComputation c r) s
       ExprFilePath fp -> do
@@ -101,6 +108,8 @@ defaultMain cs = do
       mapM_ (putStrLn . (\c -> "  " ++ cSlug c ++ "  " ++ cName c)) cs
 
     Serve' -> runServer cs
+
+    Servant' -> runServant cs
 
     Run' slug r -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
       Just c -> runComputation c r

@@ -13,6 +13,9 @@ library
                      , containers
                      , Decimal
                      , lens
+                     , servant
+                     , servant-blaze
+                     , servant-server
                      , snap
                      , snap-core
                      , snap-server
@@ -22,6 +25,7 @@ library
                      , Forming.IO
                      , Forming.Lexer
                      , Forming.Parser
+                     , Forming.Servant
                      , Forming.Server
                      , Forming.Syntax
                      , Forming.Type
