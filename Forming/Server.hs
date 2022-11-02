@@ -38,10 +38,6 @@ import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-import Hypered.Html
-  ( loginForm, navigationReesd, registerForm, resetForm
-  )
-
 import Forming.Core
 import Forming.IO (parseInput)
 import Forming.Html
@@ -73,14 +69,9 @@ appInit :: [Computation] -> SnapletInit App App
 appInit cs =
   makeSnaplet "forming-server" description Nothing $ do
     addRoutes $
-      [ ("", ifTop indexPage)
-      , ("/about", ifTop aboutPage)
-
-      , ("/login", ifTop loginPage)
-      , ("/register", ifTop registerPage)
-      , ("/reset", ifTop resetPage)
-
-      , ("/noteed", ifTop $ showNamespacePage "noteed" cs)
+      [ ("", ifTop showLandingPage)
+      , ("/about", ifTop showAboutPage)
+      , ("/examples", ifTop $ showNamespacePage cs)
       ] ++ concatMap makeRoute cs ++
       [
 
@@ -111,9 +102,9 @@ appInit cs =
 
 -- TODO Validate slugs are slugs.
 makeRoute c =
-  [ (B.concat ["/noteed/", B.pack (cSlug c)], ifTop $ showFormPage c)
-  , (B.concat ["/noteed/", B.pack (cSlug c), "/ view"], ifTop $ showFormDocPage "noteed" c)
-  , (B.concat ["/noteed/", B.pack (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
+  [ (B.concat ["/examples/", B.pack (cSlug c)], ifTop $ showFormPage c)
+  , (B.concat ["/examples/", B.pack (cSlug c), "/ view"], ifTop $ showFormDocPage c)
+  , (B.concat ["/examples/", B.pack (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
   ]
 
 
@@ -122,50 +113,23 @@ serveDirectory' = serveDirectory . (_FORMING_SITE_DIR </>)
 
 serveFile' = serveFile . (_FORMING_SITE_DIR </>)
 
-aboutPage :: Handler App App ()
-aboutPage = serveFile $ _FORMING_SITE_DIR </> "index.html"
+showAboutPage :: Handler App App ()
+showAboutPage = serveFile $ _FORMING_SITE_DIR </> "index.html"
 
 
 ------------------------------------------------------------------------------
-indexPage :: Handler App App ()
-indexPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header navigationReesd
-  H.p $ do
-    "Reesd is in private alpha. New registrations are currently disabled."
-    " You can "
-    H.a ! A.href "/login" $ "log in"
-    "."
-
-loginPage :: Handler App App ()
-loginPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header navigationReesd
-  H.p "Reesd is in private alpha. New registrations are currently disabled."
-  loginForm
-
-registerPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header navigationReesd
-  H.p "Reesd is in private alpha. New registrations are currently disabled."
-  registerForm
-  -- There could be a footer, but on simple forms, I think I prefer without.
-  -- footer "© Hypered, 2020-2021."
-
-resetPage = writeLazyText . renderHtml $ document "Reesd" $ do
-  H.header navigationReesd
-  H.p "Enter a verified email address and we'll send a password reset link\
-    \ to that address."
-  resetForm
+showLandingPage :: Handler App App ()
+showLandingPage = writeLazyText . renderHtml $ landingPage
 
 
-----------------------------------------------------------------------
-showNamespacePage :: String -> [Computation] -> Handler App App ()
-showNamespacePage namespace cs = writeLazyText . renderHtml $
-  namespacePage namespace cs
+showNamespacePage :: [Computation] -> Handler App App ()
+showNamespacePage = writeLazyText . renderHtml . namespacePage
 
 showFormPage :: Computation -> Handler App App ()
 showFormPage = writeLazyText . renderHtml . formPage
 
-showFormDocPage :: String -> Computation -> Handler App App ()
-showFormDocPage namespace c = writeLazyText . renderHtml $ formDocPage namespace c
+showFormDocPage :: Computation -> Handler App App ()
+showFormDocPage = writeLazyText . renderHtml . formDocPage
 
 
 ----------------------------------------------------------------------
@@ -176,8 +140,8 @@ submitHandler c = do
     Left err -> error (show err)
     Right unsets -> do
       params <- getParams
-      writeLazyText . renderHtml $ document "Reesd" $ do
-        H.header navigationReesd
+      writeLazyText . renderHtml $ document "Forming" $ do
+        H.header navigationForming
         H.code . H.toHtml $ cName c
         H.code . H.toHtml $ show params
         runWithInputs' c $ makeInputsFromParams unsets params

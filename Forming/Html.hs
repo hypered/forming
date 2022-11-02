@@ -15,7 +15,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
 
-import Hypered.Html (navigationReesd)
+import Hypered.Html (nav)
 
 import Forming.Core (evaluate, gatherUnsets, Computation(..), Rule(..), Input(..), Result(..))
 import Forming.Type (Type(..))
@@ -48,22 +48,33 @@ printUnsetVariables' names = do
 
 
 ------------------------------------------------------------------------------
-namespacePage :: String -> [Computation] -> Html
-namespacePage namespace cs = document "Reesd" $ do
-  H.header navigationReesd
+landingPage :: Html
+landingPage = document "Forming" $ do
+  H.header navigationForming
+  H.p $ do
+    "This is demo website for Forming."
+    " See the "
+    H.a ! A.href "/examples" $ "example forms"
+    "."
+
+
+------------------------------------------------------------------------------
+namespacePage :: [Computation] -> Html
+namespacePage cs = document "Reesd" $ do
+  H.header navigationForming
   H.span $ do
-    H.code (H.toHtml namespace)
+    H.code "Examples"
   H.ul $
     mapM_ htmlComputationItem cs
 
 htmlComputationItem :: Computation -> Html
 htmlComputationItem Computation{..} =
   H.li $ do
-    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
+    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
     H.preEscapedToHtml (" &mdash; " :: String)
     H.toHtml cName
     H.toHtml (" " :: String)
-    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug) $ "View live form."
 
 
 ------------------------------------------------------------------------------
@@ -82,7 +93,7 @@ htmlComputation Computation{..} = do
   -- flex stuff.
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
-         ! A.action (H.toValue ("/noteed/" ++ cSlug ++ "/+submit"))
+         ! A.action (H.toValue ("/examples/" ++ cSlug ++ "/+submit"))
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName
@@ -146,22 +157,22 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
 
 
 --------------------------------------------------------------------------------
-formDocPage :: String -> Computation -> Html
-formDocPage namespace c = document "Reesd" $ pageComputationDoc namespace c
+formDocPage :: Computation -> Html
+formDocPage c = document "Reesd" $ pageComputationDoc c
 
-pageComputationDoc :: String -> Computation -> Html
-pageComputationDoc namespace c@Computation{..} = do
-  H.header navigationReesd
+pageComputationDoc :: Computation -> Html
+pageComputationDoc c@Computation{..} = do
+  H.header navigationForming
   H.span $ do
-    H.a ! A.href (H.toValue $ "/" ++ namespace)
+    H.a ! A.href (H.toValue $ "/" ++ "examples")
         ! A.class_ "black" $
-      H.code (H.toHtml namespace)
+      H.code "Examples"
     " / "
     H.code (H.toHtml cSlug)
   H.p $ do
     H.toHtml cName
     " "
-    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug) $ "View live form."
   H.div $ do
     "Main rule: "
     H.code . H.toHtml $ cMain
@@ -209,3 +220,8 @@ document' center title body = do
       else
         H.div ! A.class_ "flex flex-column justify-between min-height-vh-100 mw8 center pa4 lh-copy" $
           body
+
+navigationForming =
+  nav $
+    H.div $ do
+      H.a ! A.class_ "link black hover-blue mr3" ! A.href "/" $ "Forming"
