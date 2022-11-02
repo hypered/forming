@@ -3,6 +3,7 @@
 module Forming.Html where
 
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text.Lazy.IO as T
 import System.FilePath (joinPath, splitPath, takeDirectory, FilePath, (</>))
@@ -16,45 +17,66 @@ import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
 
 import Hypered.Html (navigationReesd)
 
-import Forming.Core (gatherUnsets, Computation(..), Rule(..))
+import Forming.Core (evaluate, gatherUnsets, Computation(..), Rule(..), Input(..), Result(..))
 import Forming.Type (Type(..))
 
 
+--------------------------------------------------------------------------------
+-- Same as runWithInputs but produces HTML instead of strings to stdout.
+runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
+runWithInputs' Computation{..} mis = case mis of
+  Right (mname, is) ->
+    case evaluate [] (fromMaybe cMain mname) cRules is of
+      UnsetVariables names -> do
+        H.code "ERROR: missing user inputs."
+        printUnsetVariables' names
+        -- TODO 400 Bad Request
+      Result x -> do
+        H.code "Result:"
+        H.code . H.toHtml . show $ x
+      Error stack err -> do
+        H.code "ERROR:"
+        H.code . H.toHtml . show $ (stack, err)
+  Left err -> do
+    H.code "ERROR:"
+    H.code . H.toHtml . show $ err
+    -- TODO 400 Bad Request, possibly 500 if the form is invalid
+
+printUnsetVariables' names = do
+  H.code "This computation expects the following user inputs:\n"
+  mapM_ (H.code . H.toHtml . ("  " ++)) names
+
+
 ------------------------------------------------------------------------------
+namespacePage :: String -> [Computation] -> Html
+namespacePage namespace cs = document "Reesd" $ do
+  H.header navigationReesd
+  H.span $ do
+    H.code (H.toHtml namespace)
+  H.ul $
+    mapM_ htmlComputationItem cs
+
+htmlComputationItem :: Computation -> Html
+htmlComputationItem Computation{..} =
+  H.li $ do
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
+    H.preEscapedToHtml (" &mdash; " :: String)
+    H.toHtml cName
+    H.toHtml (" " :: String)
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+
+
+------------------------------------------------------------------------------
+formPage :: Computation -> Html
+formPage = document' True "Reesd" . pageComputation
+
+pageComputation :: Computation -> Html
 pageComputation c@Computation{..} = do
   H.div ! A.class_ "center mw7" $ do
     H.p $ H.toHtml cName
     htmlComputation c
     H.div ! A.class_ "tc moon-gray pt4" $ "Powered by Reesd"
 
-pageComputationDoc namespace c@Computation{..} = do
-  H.header navigationReesd
-  H.span $ do
-    H.a ! A.href (H.toValue $ "/" ++ namespace)
-        ! A.class_ "black" $
-      H.code (H.toHtml namespace)
-    " / "
-    H.code (H.toHtml cSlug)
-  H.p $ do
-    H.toHtml cName
-    " "
-    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
-  H.div $ do
-    "Main rule: "
-    H.code . H.toHtml $ cMain
-  H.div $ do
-    "Inputs: "
-  H.code . H.pre $
-    case gatherUnsets Nothing cMain cRules of
-      Left err -> error (show err)
-      Right unsets -> mapM_ (H.toHtml . (++ "\n") . show) unsets
-  H.div $ do
-    "Rules:"
-  H.code . H.pre $
-    mapM_ (H.toHtml . (++ "\n") . show) cRules
-
-
-------------------------------------------------------------------------------
 htmlComputation Computation{..} = do
   -- Note that `center` seems to require the containing element doesn't use the
   -- flex stuff.
@@ -121,3 +143,69 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
     TString -> "String"
     TEnum xs -> intercalate "|" xs
     TObject -> "Object"
+
+
+--------------------------------------------------------------------------------
+formDocPage :: String -> Computation -> Html
+formDocPage namespace c = document "Reesd" $ pageComputationDoc namespace c
+
+pageComputationDoc :: String -> Computation -> Html
+pageComputationDoc namespace c@Computation{..} = do
+  H.header navigationReesd
+  H.span $ do
+    H.a ! A.href (H.toValue $ "/" ++ namespace)
+        ! A.class_ "black" $
+      H.code (H.toHtml namespace)
+    " / "
+    H.code (H.toHtml cSlug)
+  H.p $ do
+    H.toHtml cName
+    " "
+    H.a ! A.href (H.toValue $ "/noteed/" ++ cSlug) $ "View live form."
+  H.div $ do
+    "Main rule: "
+    H.code . H.toHtml $ cMain
+  H.div $ do
+    "Inputs: "
+  H.code . H.pre $
+    case gatherUnsets Nothing cMain cRules of
+      Left err -> error (show err)
+      Right unsets -> mapM_ (H.toHtml . (++ "\n") . show) unsets
+  H.div $ do
+    "Rules:"
+  H.code . H.pre $
+    mapM_ (H.toHtml . (++ "\n") . show) cRules
+
+
+----------------------------------------------------------------------
+-- TODO Re-use the document function in Hypered.Html.
+document :: Text -> Html -> Html
+document = document' False
+
+document' :: Bool -> Text -> Html -> Html
+document' center title body = do
+  H.docType
+  H.html $ do
+    H.head $ do
+      H.meta ! A.charset "utf-8"
+      H.title (H.toHtml title)
+      H.meta ! A.name "viewport"
+             ! A.content "width=device-width, initial-scale=1.0"
+      H.style $ do
+        mapM_ (\a -> H.toHtml ("@import url(" ++ a ++ ");"))
+          [ "/static/css/ibm-plex.css"
+          , "/static/css/tachyons.min.v4.11.1.css"
+          , "/static/css/style.css"
+          , "/static/css/styles.css"
+          ]
+
+    H.body ! A.class_ "hy-ibm-plex" $
+      if center
+      then
+        -- It seems that combining the flex stuff with `center` in the content
+        -- (`body` here) doesn't work. So we provide this option.
+        H.div ! A.class_ "min-height-vh-100 mw8 center pa4 lh-copy" $
+          body
+      else
+        H.div ! A.class_ "flex flex-column justify-between min-height-vh-100 mw8 center pa4 lh-copy" $
+          body
