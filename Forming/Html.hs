@@ -52,7 +52,7 @@ landingPage :: Html
 landingPage = document "Forming" $ do
   H.header navigationForming
   H.p $ do
-    "This is demo website for Forming."
+    "This is a demo website for Forming."
     " See the "
     H.a ! A.href "/examples" $ "example forms"
     "."

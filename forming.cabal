@@ -19,6 +19,9 @@ library
                      , snap
                      , snap-core
                      , snap-server
+
+  -- Temporary hack, until I provide a nix/ directory.
+                     , protolude
   exposed-modules:     Forming
                      , Forming.Core
                      , Forming.Html

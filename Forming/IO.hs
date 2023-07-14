@@ -8,6 +8,8 @@ module Forming.IO where
 
 import Data.Aeson (decode, encode, object, toJSON, Value, (.=))
 import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
+import qualified Data.Aeson.Key as A (fromString, toString)
+import qualified Data.Aeson.KeyMap as A (toList)
 import Data.ByteString.Lazy.Char8 (pack)
 import qualified Data.ByteString.Lazy as LB (putStr)
 import qualified Data.HashMap.Strict as H (toList)
@@ -92,7 +94,7 @@ printValue indent v = case v of
 -- details and possibly additional structures (e.g. input names).
 printOutputAsJson :: Either String Result -> IO ()
 printOutputAsJson (Left err) = do
-  LB.putStr $ encode (object [T.pack "error" .= err])
+  LB.putStr $ encode (object ["error" .= err])
   exitFailure
 printOutputAsJson (Right result) = case result of
   Result x ->
@@ -109,7 +111,7 @@ jsonValue v = case v of
   Int x -> toJSON x
   Bool x -> toJSON x
   String x -> toJSON x
-  Object xs -> object (map (\(k, v) -> (T.pack k, jsonValue v)) xs)
+  Object xs -> object (map (\(k, v) -> (A.fromString k, jsonValue v)) xs)
 
 stringError :: EvaluationError -> String
 stringError err = case err of
@@ -145,8 +147,8 @@ makeInputs _ [] is = Right is
 makeInputsFromJson :: String -> Either String [Input]
 makeInputsFromJson s = case decode (pack s) :: Maybe Value of
   Just (A.Object kvs_) ->
-    let kvs = H.toList kvs_
-    in Right $ map (\(k, v) -> Input (T.unpack k) (parseInput' v)) kvs
+    let kvs = A.toList kvs_
+    in Right $ map (\(k, v) -> Input (A.toString k) (parseInput' v)) kvs
   Just _ -> Left "input JSON is not an object."
   Nothing -> Left "malformed input JSON."
 

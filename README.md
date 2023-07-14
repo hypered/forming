@@ -60,19 +60,19 @@ $ nix-shell
 ```
 
 I also need to bring code from my
-[`design-system`](https://github.com/hypered/design-system) repository, which
-is expected to live at `../design-system`, relative to this repository. So e.g.
+[`design`](https://github.com/hypered/design) repository, which
+is expected to live at `../design`, relative to this repository. So e.g.
 when using `runghc`:
 
 ```
-$ runghc -i../design-system bin/add.hs --html
+$ runghc -i../design/src bin/add.hs --html
 ```
 
 The HTTP server needs to know the location of the `static/` directory. This is
 given through an environment variable:
 
 ```
-$ FORMING_SITE_DIR=../design-system runghc -i../design-system bin/forming-server.hs
+$ FORMING_SITE_DIR=../design runghc -i../design/src bin/forming-server.hs
 ```
 
 
@@ -81,7 +81,7 @@ $ FORMING_SITE_DIR=../design-system runghc -i../design-system bin/forming-server
 Tests can be run with the following command:
 
 ```
-$ runghc -i../design-system bin/run-tests.hs
+$ runghc -i../design/src bin/run-tests.hs
 ```
 
 They can be read to learn the behavior of Forming.
@@ -102,14 +102,14 @@ to `/noteed` to see a list of forms.
 The same program can also be used as a command-line tool:
 
 ```
-$ runghc -i../design-system bin/forming-examples.hs --help
+$ runghc -i../design/src bin/forming-examples.hs --help
 ```
 
 ```
-$ runghc -i../design-system bin/forming-examples.hs trivial-1
+$ runghc -i../design/src bin/forming-examples.hs trivial-1
 1
 
-$ runghc -i../design-system bin/forming-examples.hs trivial-a
+$ runghc -i../design/src bin/forming-examples.hs trivial-a
 ERROR: missing user inputs.
 This computation expects the following user inputs:
 
@@ -117,10 +117,11 @@ This computation expects the following user inputs:
 
 Use `--set a 1` to provide the value 1 to the input "a".
 
-$ runghc -i../design-system bin/forming-examples.hs trivial-a --set a 1
+$ runghc -i../design/src bin/forming-examples.hs trivial-a --set a 1
+
 1
 
-$ runghc -i../design-system bin/forming-examples.hs trivial-a --json '{"a": 1}'
+$ runghc -i../design/src bin/forming-examples.hs trivial-a --json '{"a": 1}'
 1
 ```
 
@@ -128,12 +129,12 @@ $ runghc -i../design-system bin/forming-examples.hs trivial-a --json '{"a": 1}'
 # Example usage (concrete syntax)
 
 ```
-$ runghc -i../design-system -i../syntactical bin/forming.hs examples/trivial-1.fg
+$ runghc -i../design/src -i../syntactical bin/forming.hs examples/trivial-1.fg
 1
 ```
 
 ```
-$ FORMING_SITE_DIR=../design-system runghc -i../design-system -i../syntactical bin/forming.hs --serve examples/trivial-a.fg
+$ FORMING_SITE_DIR=../design runghc -i../design/src -i../syntactical bin/forming.hs --serve examples/trivial-a.fg
 ```
 
 Then visit `http://127.0.0.1:8000/noteed/TODO` or

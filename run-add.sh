@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-runghc -i../design-system -i../syntactical bin/add.hs "$@"
+runghc -i../design -i../syntactical bin/add.hs "$@"

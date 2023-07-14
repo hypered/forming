@@ -10,7 +10,7 @@
 # invoking `hpc report` or `hpc markup`.
 echo "Building bin/forming-examples..."
 ./scripts/clean.sh
-ghc --make -fhpc -i../design-system/ -i../syntactical/ bin/forming-examples.hs
+ghc --make -fhpc -i../design/ -i../syntactical/ bin/forming-examples.hs
 
 # With the HPCTIXDIR environment variable set, an HPC-instrumented process
 # will use its own .tix file. This is necessary here as Intake is run

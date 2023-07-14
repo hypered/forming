@@ -20,8 +20,9 @@ import System.Exit (exitFailure)
 
 import Hypered.Html
   ( cAddWrapper, cFont, cStaticPath, Font(IbmPlex)
-  , defaultConfig
-  , generate')
+  , defaultConfig)
+import Hypered.Design.IO
+  ( generate')
 
 import Forming.Command ( Command(..), Command'(..)
   , Run(..), ExprOrFilePath(..), parserRunInfo, parserInfo' )
@@ -137,7 +138,7 @@ runComputation c@Computation{..} mode = case mode of
       Result _ -> putStrLn "This computation doesn't require any user input."
 
   -- Generate an HTML page with technical comments.
-  -- This uses Hypered's design-system Haskell code.
+  -- This uses Hypered's design system Haskell code.
   RunHtml -> do
     let conf' = defaultConfig
           { cAddWrapper = False, cFont = IbmPlex, cStaticPath = "../../static" }

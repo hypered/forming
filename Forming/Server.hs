@@ -54,7 +54,7 @@ makeLenses ''App
 ------------------------------------------------------------------------------
 -- | This directory is built by `nix-build --attr site` and given to this
 -- program by an environment variable. During development, it can also be set
--- manually to ../design-system to provide the static/ files.
+-- manually to ../design to provide the static/ files.
 {-# NOINLINE _FORMING_SITE_DIR #-}
 _FORMING_SITE_DIR = unsafePerformIO $ getEnv "FORMING_SITE_DIR"
 

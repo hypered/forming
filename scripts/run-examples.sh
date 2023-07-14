@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-runghc -i../design-system -i../syntactical bin/forming-examples.hs "$@"
+runghc -i../design/src -i../syntactical bin/forming-examples.hs "$@"

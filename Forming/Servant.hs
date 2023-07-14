@@ -11,9 +11,11 @@ import Servant ( Get, Handler, Proxy(..), ServerT )
 import qualified Servant as Servant
 import qualified Servant.Server as Server
 import qualified Servant.HTML.Blaze as B
+import           Text.Blaze.Html5 ( Html )
 import qualified Text.Blaze.Html5 as H
 
 import Forming.Core ( Computation(..) )
+import Forming.Html
 
 
 ------------------------------------------------------------------------------
@@ -42,7 +44,7 @@ settingsProxy = Proxy
 
 
 ------------------------------------------------------------------------------
-type App = Get '[B.HTML] H.Html
+type App = Get '[B.HTML] Html
 
 appProxy :: Proxy App
 appProxy = Proxy
@@ -50,7 +52,9 @@ appProxy = Proxy
 
 ------------------------------------------------------------------------------
 serverT :: ServerT App Handler
-serverT = showHomePage
+serverT = showLandingPage
 
-showHomePage :: Handler H.Html
-showHomePage = pure "Hello."
+
+------------------------------------------------------------------------------
+showLandingPage :: Handler Html
+showLandingPage = pure landingPage
