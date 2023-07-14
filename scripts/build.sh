@@ -1,6 +1,6 @@
 #! /usr/bin/env nix-shell
 #! nix-shell -i bash ../shell.nix
 
-ghc --make -i../design/ -i../syntactical/ bin/add.hs
-ghc --make -i../design/ -i../syntactical/ bin/forming-examples.hs
-ghc --make -i../design/ -i../syntactical/ bin/forming.hs
+ghc --make -XOverloadedStrings -XTypeApplications -i../design/src/ -i../syntactical/ bin/add.hs
+ghc --make -XOverloadedStrings -XTypeApplications -i../design/src/ -i../syntactical/ bin/forming-examples.hs
+ghc --make -XOverloadedStrings -XTypeApplications -i../design/src/ -i../syntactical/ bin/forming.hs
