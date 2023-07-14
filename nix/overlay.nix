@@ -18,9 +18,4 @@ in {
     overrides =
       lib.composeExtensions (old.overrides or (_: _: { })) ourOverrides;
   });
-
-  haskellPackagesNoProfiling = super.haskellPackages.override (old: {
-    overrides =
-      (lib.composeExtensions (old.overrides or (_: _: { })) ourOverrides);
-  });
 }

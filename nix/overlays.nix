@@ -6,15 +6,14 @@
 let
 
   sources = import ./sources.nix;
-  # inherit (sources) xxx yyy;
+  inherit (sources) hypered-design;
 
   getOverlays = pkg : import "${pkg}/nix/overlays.nix";
 
   # We can overlay Haskell packages here.
   haskellOverlays =
-    # getOverlays xxx
-    # ++ getOverlays yyy
-    []
+    getOverlays hypered-design
+    ++ [ (import ./syntactical.nix) ]
     ;
 
 in haskellOverlays ++ [ (import ./overlay.nix) ]

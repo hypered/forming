@@ -1,4 +1,16 @@
 {
+    "hypered-design": {
+        "branch": "main",
+        "description": "A design system for Hypered projects",
+        "homepage": "https://hypered.design",
+        "owner": "hypered",
+        "repo": "design",
+        "rev": "9e746af9312f8e9f8f64e3de6c1c8b38706c4c0b",
+        "sha256": "03bpp1bjabyws7w4di9kiqm1j5d4xlhmdqk0jx1rhk796882q3lh",
+        "type": "tarball",
+        "url": "https://github.com/hypered/design/archive/9e746af9312f8e9f8f64e3de6c1c8b38706c4c0b.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
@@ -33,6 +45,18 @@
         "sha256": "1q8hin4wj8iic4f9nlrpfh3pnyba1v89hfv9vlkgii37v44yl5cr",
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs/archive/b3a8f7ed267e0a7ed100eb7d716c9137ff120fe3.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "syntactical": {
+        "branch": "main",
+        "description": "Haskell library for distfix expression parsing",
+        "homepage": "",
+        "owner": "noteed",
+        "repo": "syntactical",
+        "rev": "cfb8675aab833aede41f4873320830953568c8db",
+        "sha256": "1g99hx4lpbx6bkx0n40sqw9nma31kwwcacl7f0xvbzgzqx4xm36b",
+        "type": "tarball",
+        "url": "https://github.com/noteed/syntactical/archive/cfb8675aab833aede41f4873320830953568c8db.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

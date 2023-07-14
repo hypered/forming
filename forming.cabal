@@ -7,27 +7,43 @@ maintainer:          thu@hypered.io
 build-type:          Simple
 
 library
+  hs-source-dirs:      src
   build-depends:       aeson
                      , base
                      , blaze-html
+                     , bytestring
                      , containers
                      , Decimal
+                     , hypered-design
+                     , directory
+                     , filepath
                      , lens
+                     , optparse-applicative
+                     , parsec
+                     , process
+                     , scientific
                      , servant
                      , servant-blaze
                      , servant-server
                      , snap
                      , snap-core
                      , snap-server
+                     , syntactical
+                     , text
+                     , unordered-containers
+                     , wai
+                     , warp
 
   -- Temporary hack, until I provide a nix/ directory.
                      , protolude
   exposed-modules:     Forming
+                     , Forming.Command
                      , Forming.Core
                      , Forming.Html
                      , Forming.IO
                      , Forming.Lexer
                      , Forming.Parser
+                     , Forming.Run
                      , Forming.Servant
                      , Forming.Server
                      , Forming.Syntax
@@ -37,7 +53,9 @@ library
 
 executable forming
   main-is:             forming.hs
-  build-depends:       base, forming
+  build-depends:       base
+                     , forming
+                     , optparse-applicative
   hs-source-dirs:      bin
   default-language:    Haskell2010
 
