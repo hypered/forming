@@ -15,7 +15,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
 
-import Hypered.Html (nav)
+import Hypered.Html.Tachyons (nav)
 
 import Forming.Core (evaluate, gatherUnsets, Computation(..), Rule(..), Input(..), Result(..))
 import Forming.Type (Type(..))

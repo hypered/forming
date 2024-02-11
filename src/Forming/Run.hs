@@ -18,7 +18,7 @@ import qualified Options.Applicative as A
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import Hypered.Html
+import Hypered.Html.Tachyons
   ( cAddWrapper, cFont, cStaticPath, Font(IbmPlex)
   , defaultConfig)
 import Hypered.Design.IO
