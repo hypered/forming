@@ -65,13 +65,17 @@ executable forming-examples
   hs-source-dirs:      bin
   default-language:    Haskell2010
 
-test-suite run-tests
+test-suite forming-tests
   type:                exitcode-stdio-1.0
   main-is:             run-tests.hs
   build-depends:       base
                      , forming
+                     , hspec
                      , tasty
                      , tasty-hunit
-  hs-source-dirs:      bin
+                     , tasty-silver
+  other-modules:
+    Forming.Runner
+  hs-source-dirs:      tests
   default-language:    Haskell2010
   ghc-options:         -Wall

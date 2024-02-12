@@ -1,4 +1,17 @@
-module Main where
+-- This module is loaded only in the GHCi session. It defines two helper
+-- functions to run the HSpec-based tests and the Golden tests.
+module Forming.Runner (
+  runSpec,
+  runScenarios,
+  runTests,
+) where
+
+import Forming.Core as Core
+import Forming.Run as Run
+import Forming.Syntax as Syntax
+import Test.Hspec
+import Test.Tasty
+import Test.Tasty.Silver as Silver
 
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (assertBool, (@?=))
@@ -12,10 +25,19 @@ import Forming.Type
 
 
 --------------------------------------------------------------------------------
-main :: IO ()
-main = do
-  Tasty.defaultMain (Tasty.testGroup "All tests" [baseTree, assortedTree])
+runSpec :: IO ()
+runSpec = hspec $ do
+  pure ()
 
+--------------------------------------------------------------------------------
+runScenarios :: IO ()
+runScenarios = do
+  pure ()
+
+--------------------------------------------------------------------------------
+runTests :: IO ()
+runTests = do
+  Tasty.defaultMain (Tasty.testGroup "All tests" [baseTree, assortedTree])
 
 --------------------------------------------------------------------------------
 -- | These are evaluation tests on abstract syntax trees (no lexing or parsing

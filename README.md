@@ -53,7 +53,9 @@ Concrete syntax:
 
 # Development
 
-I currently use a Nix shell provided by `shell.nix`:
+I use `scripts/ghci.sh`. This loads `shell.nix` automatically.
+
+If necessary, I can use a Nix shell provided by `shell.nix` manually:
 
 ```
 $ nix-shell
