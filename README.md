@@ -67,15 +67,19 @@ is expected to live at `../design`, relative to this repository. So e.g.
 when using `runghc`:
 
 ```
-$ runghc -i../design/src bin/add.hs --html
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/add.hs --html
+$ find generated/
 ```
 
 The HTTP server needs to know the location of the `static/` directory. This is
 given through an environment variable:
 
 ```
-$ FORMING_SITE_DIR=../design runghc -i../design/src bin/forming-server.hs
+$ FORMING_SITE_DIR=../design runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs serve
 ```
+
+It is written using the Snap Framework. An alternative using Servant has been
+started (but is almost empty). Replace `serve` with `servant` to use it.
 
 
 # Tests
@@ -83,7 +87,7 @@ $ FORMING_SITE_DIR=../design runghc -i../design/src bin/forming-server.hs
 Tests can be run with the following command:
 
 ```
-$ runghc -i../design/src bin/run-tests.hs
+$ runghc -XOverloadedStrings -i../design/src -isrc/ -itests/ tests/run-tests.hs
 ```
 
 They can be read to learn the behavior of Forming.
@@ -95,7 +99,7 @@ It's possible to run Forming as a server:
 
 ```
 $ nix-shell
-$ ./run-server.sh
+$ scripts/serve-examples.sh
 ```
 
 The current homepage at `/` is re-used from another project. Instead, navigate
@@ -104,43 +108,42 @@ to `/noteed` to see a list of forms.
 The same program can also be used as a command-line tool:
 
 ```
-$ runghc -i../design/src bin/forming-examples.hs --help
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs run --help
 ```
 
 ```
-$ runghc -i../design/src bin/forming-examples.hs trivial-1
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs run trivial-1
 1
 
-$ runghc -i../design/src bin/forming-examples.hs trivial-a
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs run trivial-a
 ERROR: missing user inputs.
 This computation expects the following user inputs:
 
   a
 
-Use `--set a 1` to provide the value 1 to the input "a".
+Use `--set '("a","1")'` to provide the value 1 to the input "a".
 
-$ runghc -i../design/src bin/forming-examples.hs trivial-a --set a 1
-
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs run trivial-a --set '("a","1")'
 1
 
-$ runghc -i../design/src bin/forming-examples.hs trivial-a --json '{"a": 1}'
-1
+$ runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs run trivial-a --json '{"a": 1}'
+{"ouput":1}
 ```
 
 
 # Example usage (concrete syntax)
 
 ```
-$ runghc -i../design/src -i../syntactical bin/forming.hs examples/trivial-1.fg
+$ runghc -XOverloadedStrings -i../design/src -i../syntactical -isrc/ bin/forming.hs run --file examples/trivial-1.fg
 1
 ```
 
 ```
-$ FORMING_SITE_DIR=../design runghc -i../design/src -i../syntactical bin/forming.hs --serve examples/trivial-a.fg
+$ FORMING_SITE_DIR=../design runghc -XOverloadedStrings -i../design/src -i../syntactical -isrc/ bin/forming.hs serve --file examples/trivial-a.fg
 ```
 
-Then visit `http://127.0.0.1:8000/noteed/TODO` or
-`http://127.0.0.1:8000/noteed/TODO/+view`. (The `TODO` should be `trivial-a` or
+Then visit `http://127.0.0.1:8000/examples/TODO` or
+`http://127.0.0.1:8000/examples/TODO/+view`. (The `TODO` should be `trivial-a` or
 `examples/trivial-a` in the future.)
 
 

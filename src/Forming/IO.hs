@@ -55,7 +55,7 @@ printUnsetVariables :: [String] -> IO ()
 printUnsetVariables names = do
   putStrLn "This computation expects the following user inputs:\n"
   mapM_ (putStrLn . ("  " ++)) names
-  putStrLn "\nUse `--set a 1` to provide the value 1 to the input \"a\"."
+  putStrLn "\nUse `--set '(\"a\",\"1\")'` to provide the value 1 to the input \"a\"."
 
 printError :: [String] -> EvaluationError -> IO ()
 printError stack err = case err of
