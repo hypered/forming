@@ -53,10 +53,10 @@
         "homepage": "",
         "owner": "noteed",
         "repo": "syntactical",
-        "rev": "cfb8675aab833aede41f4873320830953568c8db",
-        "sha256": "1g99hx4lpbx6bkx0n40sqw9nma31kwwcacl7f0xvbzgzqx4xm36b",
+        "rev": "117dac5fd06ee5837d000197ee3ea8057a068705",
+        "sha256": "11mgndys9n1y6bdn2nqipj0ppplhbglxbqqlnw3bsm79cdf901mx",
         "type": "tarball",
-        "url": "https://github.com/noteed/syntactical/archive/cfb8675aab833aede41f4873320830953568c8db.tar.gz",
+        "url": "https://github.com/noteed/syntactical/archive/117dac5fd06ee5837d000197ee3ea8057a068705.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
