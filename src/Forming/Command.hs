@@ -48,7 +48,7 @@ data Run =
   | RunJsonInput String (Maybe String) -- optional specific rule to evaluate
   | RunInputs [(String, String)] (Maybe String)
     -- key/value pairs, optional specific rule to evaluate
-  deriving Show
+  deriving (Eq, Show)
 
 data ExprOrFilePath = ExprString String | ExprFilePath FilePath
   deriving Show
