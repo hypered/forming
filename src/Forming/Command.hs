@@ -8,6 +8,7 @@ module Forming.Command
   , parserInfo
   , parserRunInfo
   , parserInfo'
+  , parserRun'
   ) where
 
 import Control.Applicative ( many, optional, some, (<**>), ( <|>) )
