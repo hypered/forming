@@ -2,21 +2,12 @@
 {-# LANGUAGE RecordWildCards #-}
 module Forming.Run where
 
-import System.Environment (getArgs)
-
 import Text.Syntactical
 
-import Control.Arrow (first, right)
-import Data.ByteString.Lazy.Char8 (pack)
-import qualified Data.HashMap.Strict as H (toList)
-import Data.Aeson (decode, Value)
-import qualified Data.Aeson as A (Value(Bool, Number, Object, String))
-import Data.List (nub)
-import Data.Scientific (floatingOrInteger)
+import Data.List (lookup)
 import qualified Data.Text as T
 import qualified Options.Applicative as A
-import System.Environment (getArgs)
-import System.Exit (exitFailure)
+import Protolude hiding (evaluate)
 
 import Hypered.Html.Tachyons
   ( cAddWrapper, cFont, cStaticPath, Font(IbmPlex)
@@ -44,17 +35,17 @@ import Forming.Server (runServer)
 run :: Command -> IO ()
 run command = do
   case command of
-    Tokenize s -> case Lexer.tokenize s of
-      Right a -> putStrLn . unwords $ map toString a
+    Tokenize s -> case Lexer.tokenize $ T.unpack s of
+      Right a -> putStrLn . unwords $ map (T.pack . toString) a
       Left err -> putStrLn $ "indentation error: " ++ show err
 
     TokenizeFile fp -> do
       s <- readFile fp
-      case Lexer.tokenize s of
-        Right a -> putStrLn . unwords $ map toString a
+      case Lexer.tokenize $ T.unpack s of
+        Right a -> putStrLn . unwords $ map (T.pack . toString) a
         Left err -> putStrLn $ "indentation error: " ++ show err
 
-    SExpr s -> case Lexer.tokenize s of
+    SExpr s -> case Lexer.tokenize $ T.unpack s of
       Right a -> case Parser.parse a of
         Right e -> putStrLn $ showSExpr e
         Left f -> putStrLn $ showFailure f
@@ -62,7 +53,7 @@ run command = do
 
     SExprFile fp -> do
       s <- readFile fp
-      case Lexer.tokenize s of
+      case Lexer.tokenize $ T.unpack s of
         Right a -> case Parser.parse a of
           Right e -> putStrLn $ showSExpr e
           Left f -> putStrLn $ showFailure f
@@ -86,9 +77,9 @@ run command = do
         s <- readFile fp
         execute (\c -> runComputation c r) s
 
-execute :: (Computation -> IO ()) -> String -> IO ()
+execute :: (Computation -> IO ()) -> Text -> IO ()
 execute f s = do
-  case Lexer.tokenize s of
+  case Lexer.tokenize $ T.unpack s of
     Right a -> case Parser.parse a of
       Right e -> case Parser.parseRules e of
         Right rules -> do
@@ -105,8 +96,8 @@ defaultMain cs = do
   r <- A.execParser parserInfo'
   case r of
     RunInfo' -> do
-      putStrLn "Available computations:"
-      mapM_ (putStrLn . (\c -> "  " ++ cSlug c ++ "  " ++ cName c)) cs
+      putStrLn @Text "Available computations:"
+      mapM_ (putStrLn . (\c -> "  " <> cSlug c <> "  " <> cName c)) cs
 
     Serve' -> runServer cs
 
@@ -115,7 +106,7 @@ defaultMain cs = do
     Run' slug r -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
       Just c -> runComputation c r
       Nothing -> do
-        putStrLn "ERROR: the given computation slug doesn't exist."
+        putStrLn @Text "ERROR: the given computation slug doesn't exist."
         exitFailure
 
 defaultMainOne :: Computation -> IO ()
@@ -134,8 +125,8 @@ runComputation c@Computation{..} mode = case mode of
     -- Evaluate without input to give a hint of possible user inputs.
     case evaluate [] cMain cRules [] of
       UnsetVariables names -> printUnsetVariables names
-      Error _ (NoSuchRule _) -> putStrLn ("The rule \"" ++ cMain ++ "\" doesn't exist.")
-      Result _ -> putStrLn "This computation doesn't require any user input."
+      Error _ (NoSuchRule _) -> putStrLn ("The rule \"" <> cMain <> "\" doesn't exist.")
+      Result _ -> putStrLn @Text "This computation doesn't require any user input."
 
   -- Generate an HTML page with technical comments.
   -- This uses Hypered's design system Haskell code.
@@ -150,7 +141,7 @@ runComputation c@Computation{..} mode = case mode of
 
   -- List unset names (possibly limited to a specific rule), and their types
   -- if possible.
-  RunUnset mname -> print (gatherUnsets Nothing (maybe cMain id mname) cRules)
+  RunUnset mname -> print (gatherUnsets Nothing (maybe cMain identity mname) cRules)
 
   -- Parse inputs given as JSON and evaluate one rule.
   RunJsonInput s mname -> printOutputAsJson $ compute c mname $ makeInputsFromJson s

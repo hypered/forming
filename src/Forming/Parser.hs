@@ -5,14 +5,13 @@
 {-# Language OverloadedStrings #-}
 module Forming.Parser where
 
-import Text.Syntactical hiding (Token)
-
 import Forming.Core
 import Forming.Lexer (Token(..))
 import Forming.Syntax (Syntax)
-
 import qualified Forming.Syntax as Syntax
 import qualified Forming.Type as Type
+import Protolude hiding (LeftAssociative, RightAssociative)
+import Text.Syntactical hiding (Token)
 
 
 --------------------------------------------------------------------------------
@@ -20,13 +19,13 @@ parse :: [Token] -> Either (Failure Token) (SExpr Token)
 parse = shunt table . map Atom
 
 --------------------------------------------------------------------------------
-parseRules :: SExpr Token -> Either String [Rule]
+parseRules :: SExpr Token -> Either Text [Rule]
 parseRules expr = case expr of
   List (Atom (Token _ "declarations") : decls) -> traverse parseRule decls
 
   _ -> Left "TODO parseRules"
 
-parseRule :: SExpr Token -> Either String Rule
+parseRule :: SExpr Token -> Either Text Rule
 parseRule expr = case expr of
 
   List [Atom (Token _ "="), Atom (Token _ name), Atom (Token _ "input")] ->
@@ -50,6 +49,7 @@ parseRule expr = case expr of
     expr' <- parseExpression expr
     Right (Naked expr')
 
+parseDefinition :: SExpr Token -> Either Text (Text, Syntax)
 parseDefinition expr = case expr of
   List (Atom (Token _ "=") : Atom (Token _ name) : [body]) -> do
     body' <- parseExpression body
@@ -57,18 +57,21 @@ parseDefinition expr = case expr of
 
   _ -> Left "TODO parseDefinition"
 
+parseInherit :: [SExpr Token] -> Either Text [Text]
 parseInherit (Atom (Token _ a) : Atom (Token _ ",") : rest) = do
   members <- parseInherit rest
   return (a : members)
 parseInherit [Atom (Token _ a)] = return [a]
 parseInherit _ = Left "TODO parseInherit"
 
+parseEnumeration :: SExpr Token -> Either Text [Text]
 parseEnumeration (List [Atom (Token _ "|"), as, Atom (Token _ b)]) = do
   items <- parseEnumeration as
   return (items ++ [b])
 parseEnumeration (Atom (Token _ a)) = return [a]
-parseEnumeration expr = Left ("TODO parseEnumeration: " ++ show expr)
+parseEnumeration expr = Left ("TODO parseEnumeration: " <> show expr)
 
+parseExpression :: SExpr Token -> Either Text Syntax
 parseExpression expr = case expr of
   Atom (Token _ "{}") -> do
     return (Syntax.Object [])
@@ -83,7 +86,7 @@ parseExpression expr = case expr of
   Atom (String _ a) -> do
     return (Syntax.String a)
   Atom (Type _ a) -> do
-    error "A type should only appear as an annotation."
+    panic "A type should only appear as an annotation."
     -- ... which is parsed directly below.
   List [Atom (Token _ "ifthenelse"), a, b, c] -> do
     a' <- parseExpression a
@@ -115,11 +118,11 @@ parseExpression expr = case expr of
       "/" -> return Syntax.Div
       "==" -> return Syntax.Equal
       "union" -> return Syntax.Union
-      _ -> Left ("TODO Unsupported operator " ++ op ++ ": " ++ show expr)
+      _ -> Left ("TODO Unsupported operator " <> op <> ": " <> show expr)
     a' <- parseExpression a
     b' <- parseExpression b
     return (op' a' b')
-  _ -> Left ("TODO parseExpression : " ++ show expr)
+  _ -> Left ("TODO parseExpression : " <> show expr)
 
 
 --------------------------------------------------------------------------------

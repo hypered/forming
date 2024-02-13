@@ -6,37 +6,29 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Forming.Server where
 
-import Control.Concurrent (threadDelay)
 import Control.Lens (makeLenses)
-import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (object, Value, (.=))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
-import Data.Text (Text)
+import Data.List (head)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import Protolude hiding (head, Handler, Type)
 import Snap.Core
-  ( getHeader, getParams, getPostParam, getRequest, ifTop, logError, method
-  , modifyResponse, redirect', setHeader, writeBS, writeLazyText, writeText
-  , Method(GET, POST), Params)
+  ( getParams, ifTop, logError, method
+  , writeLazyText, writeText
+  , Method(GET), Params)
 import Snap.Http.Server
-  ( defaultConfig, setAccessLog, setErrorLog, setPort
-  , ConfigLog(ConfigFileLog)
+  ( defaultConfig
   )
 import Snap.Snaplet
   ( addRoutes, makeSnaplet, serveSnapletNoArgParsing, Handler, SnapletInit
   )
 import Snap.Util.FileServe (serveDirectory, serveFile)
 import System.Environment (getEnv)
-import System.Exit (ExitCode(ExitSuccess))
 import System.IO.Unsafe (unsafePerformIO)
 import System.FilePath ((</>))
-import System.Process (readProcessWithExitCode)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
-import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
-import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5 as H
-import qualified Text.Blaze.Html5.Attributes as A
 
 import Forming.Core
 import Forming.IO (parseInput)
@@ -102,9 +94,9 @@ appInit cs =
 
 -- TODO Validate slugs are slugs.
 makeRoute c =
-  [ (B.concat ["/examples/", B.pack (cSlug c)], ifTop $ showFormPage c)
-  , (B.concat ["/examples/", B.pack (cSlug c), "/ view"], ifTop $ showFormDocPage c)
-  , (B.concat ["/examples/", B.pack (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
+  [ (B.concat ["/examples/", T.encodeUtf8 (cSlug c)], ifTop $ showFormPage c)
+  , (B.concat ["/examples/", T.encodeUtf8 (cSlug c), "/ view"], ifTop $ showFormDocPage c)
+  , (B.concat ["/examples/", T.encodeUtf8 (cSlug c), "/ submit"], ifTop $ submitHandler c) -- TODO ifPost
   ]
 
 
@@ -137,29 +129,30 @@ submitHandler :: Computation -> Handler App App ()
 submitHandler c = do
   logError "Handling .../+submit..."
   case gatherUnsets Nothing (cMain c) (cRules c) of
-    Left err -> error (show err)
+    Left err -> panic (show err)
     Right unsets -> do
       params <- getParams
       writeLazyText . renderHtml $ document "Forming" $ do
         H.header navigationForming
-        H.code . H.toHtml $ cName c
-        H.code . H.toHtml $ show params
+        H.code . H.text $ cName c
+        H.code . H.text $ show params
         runWithInputs' c $ makeInputsFromParams unsets params
 
 -- I guess I can use `head` here since I assume getParams returns a list only
 -- when there is at least one Param. We ignore empty strings as they are
 -- submitted when users don't do anything.
 makeInputsFromParams
-  :: [(Rule, Maybe Type)] -> Params -> Either String (Maybe String, [Input])
+  :: [(Rule, Maybe Type)] -> Params -> Either Text (Maybe Text, [Input])
 makeInputsFromParams unsets params = Right (Nothing,
   filter (not . isEmptyString) $
   map
     (\(k, v) ->
-      let mtype = lookupType (B.unpack k) unsets
-      in Input (B.unpack k) (parseInput mtype . B.unpack $ head v))
+      let mtype = lookupType (T.decodeUtf8 k) unsets
+      in Input (T.decodeUtf8 k) (parseInput mtype . T.decodeUtf8 $ head v))
     (M.toList params))
 
-isEmptyString (Input _ (String [])) = True
+isEmptyString :: Input -> Bool
+isEmptyString (Input _ (String s)) = T.null s
 isEmptyString _ = False
 
 

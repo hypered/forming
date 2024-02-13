@@ -1,4 +1,6 @@
 module Forming.Type where
 
-data Type = TBool | TInt | TDecimal | TString | TEnum [String] | TObject
+import Protolude
+
+data Type = TBool | TInt | TDecimal | TString | TEnum [Text] | TObject
   deriving (Eq, Show)

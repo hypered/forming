@@ -5,17 +5,16 @@
 -- This is a Servant version of Server.hs (which uses Snap framework).
 module Forming.Servant where
 
+import Forming.Core ( Computation(..) )
+import Forming.Html
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import Servant ( Get, Handler, Proxy(..), ServerT )
+import Protolude hiding (Handler)
+import Servant ( Get, Handler, ServerT )
 import qualified Servant as Servant
 import qualified Servant.Server as Server
 import qualified Servant.HTML.Blaze as B
 import           Text.Blaze.Html5 ( Html )
-import qualified Text.Blaze.Html5 as H
-
-import Forming.Core ( Computation(..) )
-import Forming.Html
 
 
 ------------------------------------------------------------------------------
@@ -32,7 +31,7 @@ runServant cs =
 serve :: Wai.Application
 serve =
   Servant.serveWithContext appProxy Server.EmptyContext
-    $ Server.hoistServerWithContext appProxy settingsProxy id
+    $ Server.hoistServerWithContext appProxy settingsProxy identity
     $ serverT
 
 

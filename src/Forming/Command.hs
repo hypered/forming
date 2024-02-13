@@ -11,20 +11,20 @@ module Forming.Command
   , parserRun'
   ) where
 
-import Control.Applicative ( many, optional, some, (<**>), ( <|>) )
 import qualified Options.Applicative as A
+import Protolude
 
 
 --------------------------------------------------------------------------------
 -- | Describes the command available from the @forming@ command-line tool.
 data Command =
-    Tokenize String
+    Tokenize Text
   | TokenizeFile FilePath
-  | SExpr String
+  | SExpr Text
   | SExprFile FilePath
-  | Serve String
+  | Serve Text
   | ServeFile FilePath
-  | Servant String -- ^ Servant version of Serve.
+  | Servant Text -- ^ Servant version of Serve.
   | ServantFile FilePath -- ^ Servant version of ServeFile.
   | Run Run ExprOrFilePath
     -- ^ Mode, and an expression or file to evaluate.
@@ -34,7 +34,7 @@ data Command =
 -- accepting multiple computations.
 data Command' =
     RunInfo'
-  | Run' String Run
+  | Run' Text Run
     -- ^ Slug of the computation to run, and a mode.
   | Serve'
   | Servant'
@@ -45,13 +45,13 @@ data Run =
     RunInfo
   | RunHtml
   | RunList
-  | RunUnset (Maybe String)            -- optional specific rule to evaluate
-  | RunJsonInput String (Maybe String) -- optional specific rule to evaluate
-  | RunInputs [(String, String)] (Maybe String)
+  | RunUnset (Maybe Text)            -- optional specific rule to evaluate
+  | RunJsonInput Text (Maybe Text) -- optional specific rule to evaluate
+  | RunInputs [(Text, Text)] (Maybe Text)
     -- key/value pairs, optional specific rule to evaluate
   deriving (Eq, Show)
 
-data ExprOrFilePath = ExprString String | ExprFilePath FilePath
+data ExprOrFilePath = ExprString Text | ExprFilePath FilePath
   deriving Show
 
 --------------------------------------------------------------------------------
@@ -199,6 +199,7 @@ parserServant =
       pure $ Servant s
   )
 
+parseExrpOrFilePath :: A.Parser ExprOrFilePath
 parseExrpOrFilePath =
   (ExprFilePath <$> (A.strOption
      $  A.long "file"
@@ -244,6 +245,7 @@ parserRun' =
   <|> RunInputs <$> parserInputs
      <*> (optional $ A.argument A.str (A.metavar "NAME" <> A.help "A name to evaluate"))
 
+parserInputs :: A.Parser [(Text, Text)]
 parserInputs = do
   many $ A.option
     A.auto

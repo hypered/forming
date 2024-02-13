@@ -1,8 +1,8 @@
 module Forming.Syntax where
 
 import Data.Decimal (Decimal)
-
 import Forming.Type
+import Protolude hiding (Type)
 
 
 --------------------------------------------------------------------------------
@@ -10,7 +10,7 @@ data Syntax =
     Bool Bool
   | Int Int
   | Decimal Decimal
-  | String String
+  | String Text
 
   -- Type-checking is currently done during evaluation, instead as a real
   -- type-checking phase. I.e. this acts like a dynamically-typed language.
@@ -21,10 +21,10 @@ data Syntax =
   | AssertInt Syntax AssertionInt
 
   | List [Syntax]
-  | Object [(String, Syntax)] -- TODO Use a Map.
+  | Object [(Text, Syntax)] -- TODO Use a Map.
 
-  | Name String
-  | Names [String] -- ^ I think this is similar to Nix's `inherit`.
+  | Name Text
+  | Names [Text] -- ^ I think this is similar to Nix's `inherit`.
 
   | Cond Syntax Syntax Syntax -- if _ then _ else _
 

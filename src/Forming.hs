@@ -2,8 +2,7 @@
 -- programs using the Forming library.
 
 module Forming
-  ( module Forming
-  , module Forming.Core
+  ( module Forming.Core
   , module Forming.Run
   , module Forming.Syntax
   ) where

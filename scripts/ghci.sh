@@ -12,11 +12,10 @@ ghc --interactive \
   -isrc/ \
   -itests/ \
   -XImportQualifiedPost \
+  -XNoImplicitPrelude \
   -XOverloadedStrings \
   -XRecordWildCards \
   -XTypeApplications \
   -XTypeOperators \
   -Wall \
   -ghci-script scripts/ghci.conf
-
-#  -XNoImplicitPrelude \

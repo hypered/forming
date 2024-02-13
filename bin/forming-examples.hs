@@ -4,8 +4,10 @@
 module Main where
 
 import Forming
+import Forming.Lexer (readDecimal)
 import Forming.Syntax
 import Forming.Type
+import Protolude
 
 
 --------------------------------------------------------------------------------
@@ -134,12 +136,12 @@ main = defaultMain
       , Binding "personnal social contribution"
          (Mul
            (Name "personnal social contribution . normalized")
-           (Decimal (read "0.1307")))
+           (Decimal (readDecimal "0.1307")))
       , Binding "personnal social contribution . normalized"
          (Cond
            (Equal (Name "status") (String "white-collar"))
            (Name "gross salary")
-           (Mul (Name "gross salary") (Decimal (read "1.08"))))
+           (Mul (Name "gross salary") (Decimal (readDecimal "1.08"))))
       ]
   , Computation
       "signup"

@@ -2,28 +2,19 @@
 {-# LANGUAGE RecordWildCards #-}
 module Forming.Html where
 
-import Data.List (intercalate)
-import Data.Maybe (fromMaybe)
-import Data.Text (Text)
-import qualified Data.Text.Lazy.IO as T
-import System.FilePath (joinPath, splitPath, takeDirectory, FilePath, (</>))
-import System.Directory (createDirectoryIfMissing)
-import System.IO (hPutStr, withFile, IOMode(WriteMode))
+import qualified Data.Text as T
+import Forming.Core (evaluate, gatherUnsets, Computation(..), Rule(..), Input(..), Result(..))
+import Forming.Type (Type(..))
+import Hypered.Html.Tachyons (nav)
+import Protolude hiding (evaluate, Type)
 import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
-import Text.Blaze.Html.Renderer.Text (renderHtml)
-import qualified Text.Blaze.Html.Renderer.Pretty as Pretty (renderHtml)
-
-import Hypered.Html.Tachyons (nav)
-
-import Forming.Core (evaluate, gatherUnsets, Computation(..), Rule(..), Input(..), Result(..))
-import Forming.Type (Type(..))
 
 
 --------------------------------------------------------------------------------
 -- Same as runWithInputs but produces HTML instead of strings to stdout.
-runWithInputs' :: Computation -> Either String (Maybe String, [Input]) -> Html
+runWithInputs' :: Computation -> Either Text (Maybe Text, [Input]) -> Html
 runWithInputs' Computation{..} mis = case mis of
   Right (mname, is) ->
     case evaluate [] (fromMaybe cMain mname) cRules is of
@@ -33,18 +24,18 @@ runWithInputs' Computation{..} mis = case mis of
         -- TODO 400 Bad Request
       Result x -> do
         H.code "Result:"
-        H.code . H.toHtml . show $ x
+        H.code . H.text . show $ x
       Error stack err -> do
         H.code "ERROR:"
-        H.code . H.toHtml . show $ (stack, err)
+        H.code . H.text . show $ (stack, err)
   Left err -> do
     H.code "ERROR:"
-    H.code . H.toHtml . show $ err
+    H.code . H.text . show $ err
     -- TODO 400 Bad Request, possibly 500 if the form is invalid
 
 printUnsetVariables' names = do
   H.code "This computation expects the following user inputs:\n"
-  mapM_ (H.code . H.toHtml . ("  " ++)) names
+  mapM_ (H.code . H.text . ("  " <>)) names
 
 
 ------------------------------------------------------------------------------
@@ -70,11 +61,11 @@ namespacePage cs = document "Reesd" $ do
 htmlComputationItem :: Computation -> Html
 htmlComputationItem Computation{..} =
   H.li $ do
-    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug ++ "/+view") $ H.toHtml cSlug
-    H.preEscapedToHtml (" &mdash; " :: String)
+    H.a ! A.href (H.toValue $ "/examples/" <> cSlug <> "/+view") $ H.toHtml cSlug
+    H.preEscapedToHtml (" &mdash; " :: Text)
     H.toHtml cName
-    H.toHtml (" " :: String)
-    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug) $ "View live form."
+    H.toHtml (" " :: Text)
+    H.a ! A.href (H.toValue $ "/examples/" <> cSlug) $ "View live form."
 
 
 ------------------------------------------------------------------------------
@@ -88,17 +79,18 @@ pageComputation c@Computation{..} = do
     htmlComputation c
     H.div ! A.class_ "tc moon-gray pt4" $ "Powered by Reesd"
 
+htmlComputation :: Computation -> Html
 htmlComputation Computation{..} = do
   -- Note that `center` seems to require the containing element doesn't use the
   -- flex stuff.
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
-         ! A.action (H.toValue ("/examples/" ++ cSlug ++ "/+submit"))
+         ! A.action (H.toValue ("/examples/" <> cSlug <> "/+submit"))
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName
       case gatherUnsets Nothing cMain cRules of
-        Left err -> error (show err)
+        Left err -> panic (show err)
         Right unsets -> mapM_ htmlInput unsets
     H.div ! A.class_ "flex justify-between" $ do
       H.div ! A.class_ "bg-white b--black black ph3 pb4 pt3 tl w-100 dib no-underline ba bw1"
@@ -152,7 +144,7 @@ htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
     TInt -> "Int"
     TDecimal -> "Decimal"
     TString -> "String"
-    TEnum xs -> intercalate "|" xs
+    TEnum xs -> T.intercalate "|" xs
     TObject -> "Object"
 
 
@@ -164,7 +156,7 @@ pageComputationDoc :: Computation -> Html
 pageComputationDoc c@Computation{..} = do
   H.header navigationForming
   H.span $ do
-    H.a ! A.href (H.toValue $ "/" ++ "examples")
+    H.a ! A.href (H.toValue @Text "/examples")
         ! A.class_ "black" $
       H.code "Examples"
     " / "
@@ -172,7 +164,7 @@ pageComputationDoc c@Computation{..} = do
   H.p $ do
     H.toHtml cName
     " "
-    H.a ! A.href (H.toValue $ "/examples/" ++ cSlug) $ "View live form."
+    H.a ! A.href (H.toValue $ "/examples/" <> cSlug) $ "View live form."
   H.div $ do
     "Main rule: "
     H.code . H.toHtml $ cMain
@@ -180,7 +172,7 @@ pageComputationDoc c@Computation{..} = do
     "Inputs: "
   H.code . H.pre $
     case gatherUnsets Nothing cMain cRules of
-      Left err -> error (show err)
+      Left err -> panic (show err)
       Right unsets -> mapM_ (H.toHtml . (++ "\n") . show) unsets
   H.div $ do
     "Rules:"

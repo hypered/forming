@@ -5,21 +5,22 @@
 module Forming.Core where
 
 import Control.Monad (join)
-import Data.List (deleteFirstsBy, intercalate, nub, nubBy)
+import Data.List (deleteFirstsBy, intercalate, lookup, nub, nubBy)
 import Data.Maybe (isJust)
-
+import qualified Data.Text as T
+import Protolude hiding (check, evaluate, reduce, Sum, Type)
 import Forming.Syntax
 import Forming.Type
 
 
 --------------------------------------------------------------------------------
-evaluate :: [String] -> String -> [Rule] -> [Input] -> Result
+evaluate :: [Text] -> Text -> [Rule] -> [Input] -> Result
 evaluate stack name rs is = case filter ((== name) . rName) rs' of
   [r] -> case r of
 
     Unset _ mtype -> case lookupInput (rName r) is of
       -- TODO Ruleout Syntax that are not "Value"
-      Just (Name _) -> error "Inputs cannot be a Name."
+      Just (Name _) -> panic "Inputs cannot be a Name."
       Just e -> case mtype of
         Just t -> case checkType e t e of
           Nothing -> Result e
@@ -36,7 +37,7 @@ evaluate stack name rs is = case filter ((== name) . rName) rs' of
   where
   rs' = filter isNamedRule rs
 
-reduce :: [String] -> Syntax -> [Rule] -> [Input] -> Result
+reduce :: [Text] -> Syntax -> [Rule] -> [Input] -> Result
 reduce stack e rs is = case e of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
@@ -64,26 +65,26 @@ reduce stack e rs is = case e of
   List (e : es) -> case reduce stack e rs is of
     (Result x) -> case reduce stack (List es) rs is of
       (Result (List xs)) -> Result (List (x : xs))
-      (Result _) -> error "Can't happen; the Result is necessarily a List."
+      (Result _) -> panic "Can't happen; the Result is necessarily a List."
       Error stack' err -> Error stack' err
       UnsetVariables xs -> UnsetVariables xs
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   Object kvs -> case reduce stack (List (map snd kvs)) rs is of
     (Result (List xs)) -> Result (Object (zip (map fst kvs) xs))
-    (Result _) -> error "Can't happen; the Result is necessarily a List."
+    (Result _) -> panic "Can't happen; the Result is necessarily a List."
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   Name name -> evaluate stack name rs is
   Names names -> case reduce stack (List (map Name names)) rs is of
     (Result (List xs)) -> Result (Object (zip names xs))
-    (Result _) -> error "Can't happen; the Result is necessarily a List."
+    (Result _) -> panic "Can't happen; the Result is necessarily a List."
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   Cond e1 e2 e3 -> case reduce stack e1 rs is of
     (Result (Bool True)) -> reduce stack e2 rs is
     (Result (Bool False)) -> reduce stack e3 rs is
-    (Result t) -> Error stack (TypeMismatch Nothing $ "Expected a Bool, got " ++ show t)
+    (Result t) -> Error stack (TypeMismatch Nothing $ "Expected a Bool, got " <> show t)
     Error stack' err -> Error stack' err
     UnsetVariables xs -> UnsetVariables xs
   Add e1 e2 -> add stack rs is e1 e2
@@ -101,25 +102,25 @@ reduce stack e rs is = case e of
 bbinop = binop TBool . op
   where op f a b = case (a, b) of
           (Bool a_, Bool b_) -> Bool (f a_ b_)
-          (_, _) -> error "bbinop called with wrong types"
+          (_, _) -> panic "bbinop called with wrong types"
           -- It may mean that checkType has a bug.
 
 ibinop = binop TInt . op
   where op f a b = case (a, b) of
           (Int a_, Int b_) -> Int (f a_ b_)
-          (_, _) -> error "ibinop called with wrong types"
+          (_, _) -> panic "ibinop called with wrong types"
           -- It may mean that checkType has a bug.
 
 ibbinop = binop TInt . op
   where op f a b = case (a, b) of
           (Int a_, Int b_) -> Bool (f a_ b_)
-          (_, _) -> error "ibinop called with wrong types"
+          (_, _) -> panic "ibinop called with wrong types"
           -- It may mean that checkType has a bug.
 
 union = binop TObject . op
   where op f a b = case (a, b) of
           (Object as, Object bs) -> Object (f as bs)
-          (_, _) -> error "union called with wrong types"
+          (_, _) -> panic "union called with wrong types"
           -- It may mean that checkType has a bug.
 
 equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
@@ -182,7 +183,7 @@ lookupInput name is = lookup name is'
 -- multiple times.
 -- In addition of reporting unset variables, this reports its type when it is
 -- trivial to do (e.g. there is a direct annotation of that variable).
-gatherUnsets :: Maybe Type -> String -> [Rule]
+gatherUnsets :: Maybe Type -> Text -> [Rule]
   -> Either EvaluationError [(Rule, Maybe Type)]
 gatherUnsets mtype name rs = case filter ((== name) . rName) rs' of
   [r] -> case r of
@@ -241,7 +242,7 @@ check e a@(GreaterThan y) _x = case _x of
         | otherwise -> case e of
     Name name -> Just (AssertionIntError (Just name) a)
     _ -> Just (AssertionIntError Nothing a)
-  _ -> Just (TypeMismatch Nothing ("Expected an Int, got " ++ show _x))
+  _ -> Just (TypeMismatch Nothing ("Expected an Int, got " <> show _x))
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
@@ -251,7 +252,7 @@ bcheck e _x = case _x of
   Bool False -> case e of
     Name name -> Just (AssertionError (Just name))
     _ -> Just (AssertionError Nothing)
-  _ -> Just (TypeMismatch Nothing ("Expected a Bool, got " ++ show _x))
+  _ -> Just (TypeMismatch Nothing ("Expected a Bool, got " <> show _x))
 
 -- | `checkType` works similarly to `check`.
 checkType :: Syntax -> Type -> Syntax -> Maybe EvaluationError
@@ -264,15 +265,16 @@ checkType e a _x = case (_x, a) of
   (Object _, TObject) -> Nothing
   _ -> case e of
     Name name -> Just (TypeMismatch (Just name)
-      ("Expected " ++ t ++ ", got " ++ show _x))
-    _ -> Just (TypeMismatch Nothing ("Expected " ++ t ++ ", got " ++ show _x))
+      ("Expected " <> t <> ", got " <> show _x))
+    _ -> Just (TypeMismatch Nothing ("Expected " <> t <> ", got " <> show _x))
   where
+  t :: Text
   t = case a of
     TBool -> "a Bool"
     TInt -> "an Int"
     TDecimal -> "a Decimal"
     TString -> "a String"
-    TEnum xs -> intercalate "|" xs
+    TEnum xs -> T.intercalate "|" xs
     TObject -> "an Object"
 
 
@@ -289,9 +291,9 @@ validate = undefined
 -- A computation, could also be called a form, is a list of rules with a main
 -- one to evaluate.
 data Computation = Computation
-  { cSlug :: String -- ^ A short name, that can be used in URLs.
-  , cName :: String -- ^ A display name, can contain spaces.
-  , cMain :: String -- Default rule to evaluate, must appear in the cRules.
+  { cSlug :: Text -- ^ A short name, that can be used in URLs.
+  , cName :: Text -- ^ A display name, can contain spaces.
+  , cMain :: Text -- Default rule to evaluate, must appear in the cRules.
   , cRules :: [Rule]
   }
 
@@ -300,32 +302,32 @@ data Computation = Computation
 -- It can be an unnamed (naked) expression, to allow Forming to be used as a
 -- simple calculator.
 data Rule =
-    Unset { rName :: String, rType :: Maybe Type }
-  | Binding { rName :: String , rExpression :: Syntax }
+    Unset { rName :: Text, rType :: Maybe Type }
+  | Binding { rName :: Text , rExpression :: Syntax }
   | Naked { rExpression :: Syntax }
   deriving (Eq, Show)
 
 data EvaluationError =
-    NoSuchRule String
-  | MultipleRules String
+    NoSuchRule Text
+  | MultipleRules Text
   | Cycles
-  | TypeMismatch (Maybe String) String
+  | TypeMismatch (Maybe Text) Text
     -- ^ When the type mismatch is reported by a failed annotation involving
     -- directly a Name, it is given here.
-  | AssertionIntError (Maybe String) AssertionInt
+  | AssertionIntError (Maybe Text) AssertionInt
     -- ^ When the assertion involves directly a Name, it is given here.
-  | AssertionError (Maybe String)
+  | AssertionError (Maybe Text)
     -- ^ When the assertion involves directly a Name, it is given here.
   deriving (Eq, Show)
 
-data Result = Result Syntax | UnsetVariables [String] | Error [String] EvaluationError
+data Result = Result Syntax | UnsetVariables [Text] | Error [Text] EvaluationError
   deriving (Eq, Show)
 
 -- | An input is like the simplest rule: it binds a value to a name.
 -- That value is used to replace an unset variable with the same name.
 -- TODO Raise an error if an input is provided for a variable that cannot be set.
 -- TODO Raise an error if an input is provided for non-existing variable.
-data Input = Input String Syntax
+data Input = Input Text Syntax
   deriving Show
 
 isNamedRule (Unset _ _) = True

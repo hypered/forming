@@ -7,21 +7,16 @@ module Forming.Runner (
 ) where
 
 import Forming.Core as Core
-import Forming.Run as Run
+import Forming.Lexer (readDecimal)
 import Forming.Syntax as Syntax
+import Forming.Type
+import Protolude hiding (evaluate, Sum)
 import Test.Hspec
 import Test.Tasty
-import Test.Tasty.Silver as Silver
-
-import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (assertBool, (@?=))
 
 import qualified Test.Tasty as Tasty
 import qualified Test.Tasty.HUnit as HUnit
-
-import Forming
-import Forming.Syntax
-import Forming.Type
 
 
 --------------------------------------------------------------------------------
@@ -75,7 +70,7 @@ baseTree = Tasty.testGroup "Base tests"
 
   , HUnit.testCase "a = \"x\"" $
       eval "a" [Binding "a" (Decimal 3500)]
-      @?= Result (Decimal (read "3500.00"))
+      @?= Result (Decimal (readDecimal "3500.00"))
 
   , HUnit.testCase "a = \"x\"" $
       eval "a" [Binding "a" (String "x")]
@@ -280,11 +275,13 @@ assortedTree = Tasty.testGroup "Assorted tests"
       evaluate [] "l" rules [Input "i" (Bool False), Input "e" (Int 4)] @?= Result (Int 4)
   ]
 
-eval name rules = evaluate [] name rules []
+eval :: Text -> [Rule] -> Result
+eval name rules' = evaluate [] name rules' []
 
 
 --------------------------------------------------------------------------------
 -- Examples rules to play with the CLI.
+rules :: [Rule]
 rules =
   [ rule_1, rule_2, rule_3, rule_4, rule_5, rule_6
   , rule_7add, rule_7sub , rule_7mul, rule_7div
@@ -292,6 +289,9 @@ rules =
   , rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17
   , rule_18
   ]
+
+
+rule_1, rule_2, rule_3, rule_4, rule_5, rule_6, rule_7add, rule_7sub , rule_7mul, rule_7div, rule_8, rule_9, rule_10, rule_11, rule_12, rule_13, rule_14, rule_15, rule_16, rule_17, rule_18 :: Rule
 
 rule_1 = Binding "a" (Int 5)
 

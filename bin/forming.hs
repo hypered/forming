@@ -3,10 +3,10 @@
 {-# Language OverloadedStrings #-}
 module Main where
 
-import qualified Options.Applicative as A
-
 import qualified Forming.Command as Command
 import qualified Forming.Run as Run
+import Protolude
+import qualified Options.Applicative as A
 
 
 --------------------------------------------------------------------------------

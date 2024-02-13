@@ -2,16 +2,16 @@
 module Forming.Lexer where
 
 import qualified Data.Decimal as Decimal
+import Data.List (head)
+import qualified Data.Text as T
 import GHC.Exts (IsString(..))
-import Text.ParserCombinators.Parsec
-
-import Text.Syntactical hiding (Token)
-import Text.Syntactical.Indent (Tree(..), strides')
-
-import qualified Text.Syntactical as Syntactical
-
 import Forming.Type (Type)
 import qualified Forming.Type as Type
+import Protolude hiding (empty, head, list, many, sourceColumn, sourceLine, sym, try, Type, (<|>))
+import Text.ParserCombinators.Parsec
+import Text.Syntactical hiding (Token)
+import Text.Syntactical.Indent (Tree(..), strides')
+import qualified Text.Syntactical as Syntactical
 
 
 ----------------------------------------------------------------------
@@ -19,11 +19,11 @@ import qualified Forming.Type as Type
 ----------------------------------------------------------------------
 
 data Token =
-    Token Source String
+    Token Source Text
   | Bool Source Bool
   | Int Source Int
   | Decimal Source Decimal.Decimal
-  | String Source String
+  | String Source Text
   | Type Source Type
   deriving Show
 
@@ -32,10 +32,10 @@ data Source = Source Int Int -- source file line and column
   deriving Show
 
 instance IsString Token where
-  fromString = Token Internal
+  fromString = Token Internal . T.pack
 
 instance Syntactical.Token Token where
-  toString (Token _ t) = t
+  toString (Token _ t) = T.unpack t
   toString (Bool _ a) = show a
   toString (Int _ t) = show t
   toString (Decimal _ a) = show a
@@ -62,12 +62,12 @@ myOperator o as = case pts of
     [as'] -> list ";" [Atom (Token Internal "declarations")] as'
   "``" -> case as of
     [a,b,c] -> List [b,a,c]
-  _ -> List $ Atom (Token Internal pts) : as
+  _ -> List $ Atom (Token Internal $ T.pack pts) : as
   where pts = concatMap toString $ symbols o
 
 tuple xs (List [Atom (Token Internal ","),a,b]) = tuple (a:xs) b
 tuple xs b = List (a : reverse (b:xs))
-  where a = Atom (Token Internal $ ',' : show (length xs + 1))
+  where a = Atom (Token Internal $ "," <> show (length xs + 1))
 
 list c xs (List [Atom (Token Internal c'),a,b]) | c == c' = list c (a:xs) b
 list _ xs b = List (reverse (b:xs))
@@ -87,7 +87,7 @@ source = do
       c = sourceColumn p
   return $ Source l c
 
-keywords :: [String]
+keywords :: [Text]
 keywords = words "let where of"
 
 tokenize = strides' atom intro "{" "}" ";"
@@ -100,8 +100,8 @@ atom = empty <|> str <|> ssym <|> sym
 intro :: P Token
 intro = do
   src <- source
-  str <- choice (map string keywords)
-  return $ Token src str
+  str <- choice (map (string . T.unpack) keywords)
+  return $ Token src $ T.pack str
 
 -- Parse a symbol. A symbol is any consecutive list of non-blank
 -- characters except for `,()⟨⟩[], which are each a single symbol.
@@ -109,10 +109,10 @@ sym :: P (Tree Token)
 sym = try $ do
   src <- source
   x <- noneOf "\t\n "
-  if x `elem` ("`,()⟨⟩[]" :: String)
+  if x `elem` ("`,()⟨⟩[]" :: [Char])
     then do
       spaces
-      return (Sym $ Token src [x])
+      return (Sym $ Token src $ T.singleton x)
     else do
       xs <- manyTill anyChar (lookAhead $ (oneOf "`,()⟨⟩[]\t\n " >> return ()) <|> eof)
       let chars = x:xs
@@ -135,17 +135,29 @@ sym = try $ do
         "String" -> do
           spaces
           return (Sym (Type src Type.TString))
-        _ | chars `elem` keywords -> do
+        _ | T.pack chars `elem` keywords -> do
           pzero
-        _ | all (`elem` ("0123456789" :: String)) chars -> do
+        _ | all (`elem` ("0123456789" :: [Char])) chars -> do
           spaces
-          return (Sym (Int src (read chars)))
-        _ | all (`elem` ("0123456789." :: String)) chars -> do
+          return (Sym (Int src (readInt chars)))
+        _ | all (`elem` ("0123456789." :: [Char])) chars -> do
           spaces
-          return (Sym (Decimal src (read chars)))
+          return (Sym (Decimal src (readDecimal chars)))
         _ -> do
           spaces
-          return (Sym (Token src chars))
+          return (Sym (Token src $ T.pack chars))
+
+readInt :: [Char] -> Int
+readInt s =
+  case reads s of
+    [(x, "")] -> x
+    _ -> panic $ "readInt: " <> T.pack s
+
+readDecimal :: [Char] -> Decimal.Decimal
+readDecimal s =
+  case reads s of
+    [(x, "")] -> x
+    _ -> panic $ "readDecimal: " <> T.pack s
 
 -- Parse a symbol delimited by forward slashes (to allow spaces).
 ssym :: P (Tree Token)
@@ -155,7 +167,7 @@ ssym = try $ do
   x <- many1 (noneOf "\t\n/")
   _ <- char '/'
   spaces
-  return . Sym $ Token src ('/' : x ++ "/")
+  return . Sym $ Token src ("/" <> T.pack x <> "/")
 
 -- Parse the empty-list symbol.
 empty :: P (Tree Token)
@@ -175,4 +187,4 @@ str = try $ do
   x <- many (noneOf "\t\n\"")
   _ <- char '"'
   spaces
-  return . Sym $ String src x
+  return . Sym $ String src $ T.pack x
