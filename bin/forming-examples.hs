@@ -5,7 +5,6 @@ module Main where
 
 import Forming
 import Forming.Lexer (readDecimal)
-import Forming.Syntax
 import Forming.Type
 import Protolude
 

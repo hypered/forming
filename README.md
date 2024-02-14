@@ -78,6 +78,14 @@ given through an environment variable:
 $ FORMING_SITE_DIR=../design runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs serve
 ```
 
+This is being changed to use another version, called Struct (not yet ready at
+all):
+
+```
+$ nix-build -A struct --out-link _site
+$ FORMING_SITE_DIR=_site runghc -XOverloadedStrings -i../design/src -isrc/ bin/forming-examples.hs serve
+```
+
 It is written using the Snap Framework. An alternative using Servant has been
 started (but is almost empty). Replace `serve` with `servant` to use it.
 

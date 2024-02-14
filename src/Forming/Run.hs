@@ -134,7 +134,7 @@ runComputation c@Computation{..} mode = case mode of
     let conf' = defaultConfig
           { cAddWrapper = False, cFont = IbmPlex, cStaticPath = "../../static" }
     generate' "form.html" "Forming"
-      conf' (const (pageComputation c))
+      conf' (const (pageComputation "/examples/" c))
 
   -- List all rules.
   RunList -> mapM_ print cRules

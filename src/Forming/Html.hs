@@ -70,22 +70,22 @@ htmlComputationItem Computation{..} =
 
 ------------------------------------------------------------------------------
 formPage :: Computation -> Html
-formPage = document' True "Reesd" . pageComputation
+formPage = document' True "Reesd" . pageComputation "/examples/"
 
-pageComputation :: Computation -> Html
-pageComputation c@Computation{..} = do
+pageComputation :: Text -> Computation -> Html
+pageComputation prefix c@Computation{..} = do
   H.div ! A.class_ "center mw7" $ do
     H.p $ H.toHtml cName
-    htmlComputation c
+    htmlComputation prefix c
     H.div ! A.class_ "tc moon-gray pt4" $ "Powered by Reesd"
 
-htmlComputation :: Computation -> Html
-htmlComputation Computation{..} = do
+htmlComputation :: Text -> Computation -> Html
+htmlComputation prefix Computation{..} = do
   -- Note that `center` seems to require the containing element doesn't use the
   -- flex stuff.
   H.form ! A.class_ "bg-white mw7"
          ! A.method "POST"
-         ! A.action (H.toValue ("/examples/" <> cSlug <> "/+submit"))
+         ! A.action (H.toValue (prefix <> cSlug <> "/+submit"))
          $ do
     H.div ! A.class_ "pa4 bt br bl b--black bw1" $ do
       H.h2 $ H.toHtml cName

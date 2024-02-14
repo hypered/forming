@@ -10,6 +10,8 @@ in rec
     # binaries + haddock are also available as binaries.all.
     haddock = nixpkgs.haskellPackages.forming.doc;
 
+    struct = (import "${sources.hypered-design}").struct;
+
     # A shell to try out our binaries
     # Run with nix-shell default.nix -A shell
     shell = nixpkgs.mkShell {
