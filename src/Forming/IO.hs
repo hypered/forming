@@ -72,7 +72,7 @@ printError stack err = case err of
     putStrLn @Text $ "while evaluating rules " <> show stack
 
 printValue :: Int -> Syntax -> IO ()
-printValue indent v = case v of
+printValue indent val = case val of
   Bool x -> putStrLn (padding <> show x)
   Int x -> putStrLn (padding <> show x)
   Decimal x -> putStrLn (padding <> show x)
@@ -83,8 +83,9 @@ printValue indent v = case v of
       putStrLn (padding <> "  " <> k <> ": ") >> printValue (indent + 2) v)
       xs
     putStrLn (padding <> "}")
+  _ -> panic $ "printValue: " <> show val
 
-  where padding = T.replicate (indent * 2) " "
+ where padding = T.replicate (indent * 2) " "
 
 
 --------------------------------------------------------------------------------
@@ -98,7 +99,7 @@ printOutputAsJson (Left err) = do
 printOutputAsJson (Right result) = case result of
   Result x ->
     LB.putStr $ encode (object ["ouput" .= jsonValue x])
-  UnsetVariables names -> do
+  UnsetVariables _ -> do
     LB.putStr $ encode (object ["error" .= ("missing user inputs" :: Text)])
     exitFailure
   Error stack err -> do
@@ -106,11 +107,12 @@ printOutputAsJson (Right result) = case result of
     exitFailure
 
 jsonValue :: Syntax -> Value
-jsonValue v = case v of
+jsonValue val = case val of
   Int x -> toJSON x
   Bool x -> toJSON x
   String x -> toJSON x
   Object xs -> object (map (\(k, v) -> (A.fromText k, jsonValue v)) xs)
+  _ -> panic $ "jsonValue: " <> show val
 
 stringError :: EvaluationError -> Text
 stringError err = case err of
@@ -120,14 +122,14 @@ stringError err = case err of
     "multiple rules have the same name \"" <> name <> "\"."
   Cycles ->
     "the rules form a cycle."
-  TypeMismatch mname err ->
+  TypeMismatch mname err' ->
     "type mismatch: " <>
-      err <>
+      err' <>
       maybe "" (\name -> " for the variable \"" <> name <> "\"") mname
-  AssertionIntError mname err -> do
+  AssertionIntError mname err' -> do
     "an assertion has failed: " <>
       maybe "" (\name -> "\"" <> name <> "\" must be ") mname
-      <> show err
+      <> show err'
   AssertionError mname -> do
     "an assertion has failed: " <>
       maybe "" (\name -> "\"" <> name <> "\" ") mname
@@ -173,8 +175,9 @@ parseInput Nothing val = case val of
   _ -> String val
 parseInput x _ = panic (show x)
 
+parseInput' :: Value -> Syntax
 parseInput' (A.Bool x) = Bool x
-parseInput' (A.Number x) = case floatingOrInteger x of
+parseInput' (A.Number x) = case floatingOrInteger x :: Either Double Int of
   Right  v -> Int v
   Left _ -> panic "TODO Support floats"
 parseInput' (A.String x) = String x

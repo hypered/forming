@@ -4,9 +4,7 @@
 
 module Forming.Core where
 
-import Control.Monad (join)
-import Data.List (deleteFirstsBy, intercalate, lookup, nub, nubBy)
-import Data.Maybe (isJust)
+import Data.List (deleteFirstsBy, lookup, nub, nubBy)
 import qualified Data.Text as T
 import Protolude hiding (check, evaluate, reduce, Sum, Type)
 import Forming.Syntax
@@ -30,6 +28,8 @@ evaluate stack name rs is = case filter ((== name) . rName) rs' of
 
     Binding _ e -> reduce (name : stack) e rs' is
 
+    _ -> panic $ "evaluate: " <> show r
+
   [] -> Error [name] (NoSuchRule name)
 
   _ -> Error [name] (MultipleRules name)
@@ -38,7 +38,7 @@ evaluate stack name rs is = case filter ((== name) . rName) rs' of
   rs' = filter isNamedRule rs
 
 reduce :: [Text] -> Syntax -> [Rule] -> [Input] -> Result
-reduce stack e rs is = case e of
+reduce stack expr rs is = case expr of
   Bool x -> Result (Bool x)
   Int x -> Result (Int x)
   AssertInt e assertion -> case reduce stack e rs is of
@@ -99,49 +99,76 @@ reduce stack e rs is = case e of
   Equal e1 e2 -> equal stack rs is e1 e2
   Union e1 e2 -> union unionRight stack rs is e1 e2
 
+bbinop
+  :: (Bool -> Bool -> Bool)
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 bbinop = binop TBool . op
   where op f a b = case (a, b) of
           (Bool a_, Bool b_) -> Bool (f a_ b_)
           (_, _) -> panic "bbinop called with wrong types"
           -- It may mean that checkType has a bug.
 
+ibinop
+  :: (Int -> Int -> Int)
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 ibinop = binop TInt . op
   where op f a b = case (a, b) of
           (Int a_, Int b_) -> Int (f a_ b_)
           (_, _) -> panic "ibinop called with wrong types"
           -- It may mean that checkType has a bug.
 
+ibbinop
+  :: (Int -> Int -> Bool)
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 ibbinop = binop TInt . op
   where op f a b = case (a, b) of
           (Int a_, Int b_) -> Bool (f a_ b_)
           (_, _) -> panic "ibinop called with wrong types"
           -- It may mean that checkType has a bug.
 
+union
+  :: ([(Text, Syntax)] -> [(Text, Syntax)] -> [(Text, Syntax)])
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 union = binop TObject . op
   where op f a b = case (a, b) of
           (Object as, Object bs) -> Object (f as bs)
           (_, _) -> panic "union called with wrong types"
           -- It may mean that checkType has a bug.
 
+equal :: [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 equal = binop' (checkingEqClass (\a b -> Bool (a == b)))
 
+add, sub, mul, div' :: [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 add = binop' (checkingNumClass f)
   where f (Int a) (Int b) = Int (a + b)
         f (Decimal a) (Decimal b) = Decimal (a + b)
+        f a b = panic $ "add: " <> show (a, b)
 sub = binop' (checkingNumClass f)
   where f (Int a) (Int b) = Int (a - b)
         f (Decimal a) (Decimal b) = Decimal (a - b)
+        f a b = panic $ "sub: " <> show (a, b)
 mul = binop' (checkingNumClass f)
   where f (Int a) (Int b) = Int (a * b)
         f (Decimal a) (Decimal b) = Decimal (a * b)
+        f a b = panic $ "mul: " <> show (a, b)
 div' = binop' (checkingNumClass f)
   where f (Int a) (Int b) = Int (div a b)
         f (Decimal a) (Decimal b) = Decimal (a / b)
+        f a b = panic $ "div': " <> show (a, b)
 
+unionRight :: Eq a => [(a, b)] -> [(a, b)] -> [(a, b)]
 unionRight as bs = deleteFirstsBy (\a b -> fst a == fst b) as bs ++ bs
 
+binop
+  :: Type
+  -> (Syntax -> Syntax -> Syntax)
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 binop t f = binop' (checkingType t f)
 
+binop'
+  :: ([Text]
+  -> Syntax -> Syntax -> Syntax -> Syntax -> Result)
+  -> [Text] -> [Rule] -> [Input] -> Syntax -> Syntax -> Result
 binop' f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is) of
   (Result a, Result b) -> f stack e1 e2 a b
   (Error stack' err, _) ->
@@ -155,6 +182,8 @@ binop' f stack rs is e1 e2 = case (reduce stack e1 rs is, reduce stack e2 rs is)
   (_, UnsetVariables ys) ->
     UnsetVariables ys
 
+checkingType
+  :: Type -> (Syntax -> Syntax -> Syntax) -> [Text] -> Syntax -> Syntax -> Syntax -> Syntax -> Result
 checkingType t f stack e1 e2 a b =
   case (checkType e1 t a, checkType e2 t b) of
     (Nothing, Nothing) ->
@@ -163,21 +192,26 @@ checkingType t f stack e1 e2 a b =
     (Just err, _) -> Error stack err
     (_, Just err) -> Error stack err
 
-checkingEqClass f stack e1 e2 a b =
+checkingEqClass
+  :: (Syntax -> Syntax -> Syntax) -> [Text] -> p1 -> p2 -> Syntax -> Syntax -> Result
+checkingEqClass f stack _ _ a b =
   case (a, b) of
     (Int _, Int _) -> Result (f a b)
     (Bool _, Bool _) -> Result (f a b)
     (String _, String _) -> Result (f a b)
     _ -> Error stack (TypeMismatch Nothing "Can't be compared.")
 
-checkingNumClass f stack e1 e2 a b =
+checkingNumClass
+  :: (Syntax -> Syntax -> Syntax) -> [Text] -> p1 -> p2 -> Syntax -> Syntax -> Result
+checkingNumClass f stack _ _ a b =
   case (a, b) of
     (Int _, Int _) -> Result (f a b)
     (Decimal _, Decimal _) -> Result (f a b)
     _ -> Error stack (TypeMismatch Nothing "Can't do arithmetic.")
 
+lookupInput :: Text -> [Input] -> Maybe Syntax
 lookupInput name is = lookup name is'
-  where is' = map (\(Input name val) -> (name, val)) is
+  where is' = map (\(Input name' val) -> (name', val)) is
 
 -- TODO There is no sharing, so multiple occurence of same name is computed
 -- multiple times.
@@ -190,6 +224,7 @@ gatherUnsets mtype name rs = case filter ((== name) . rName) rs' of
     Unset _ Nothing -> Right [(r, mtype)]
     Unset _ mtype' -> Right [(r, mtype')]
     Binding _ e -> gatherUnsets' mtype rs' e
+    _ -> panic $ "gatherUnsets: " <> show r
   [] -> Left (NoSuchRule name)
   _ -> Left (MultipleRules name)
 
@@ -197,11 +232,11 @@ gatherUnsets mtype name rs = case filter ((== name) . rName) rs' of
   rs' = filter isNamedRule rs
 
 gatherUnsets' :: Maybe Type -> [Rule] -> Syntax -> Either EvaluationError [(Rule, Maybe Type)]
-gatherUnsets' mtype rs e = case e of
-  Bool x -> Right []
-  Int x -> Right []
+gatherUnsets' mtype rs expr = case expr of
+  Bool _ -> Right []
+  Int _ -> Right []
   AssertInt e1 _ -> gatherUnsets' (Just TInt) rs e1
-  String x -> Right []
+  String _ -> Right []
   Annotation e1 t -> gatherUnsets' (Just t) rs e1
   Assert e1 e2 -> gatherUnsets' mtype rs (List
     [ maybe e1 (Annotation e1) mtype
@@ -233,6 +268,7 @@ gatherUnsets' mtype rs e = case e of
   LessThan e1 e2 -> gatherUnsets' (Just TInt) rs (List [e1, e2])
   Equal e1 e2 -> gatherUnsets' Nothing rs (List [e1, e2])
   Union e1 e2 -> gatherUnsets' (Just TObject) rs (List [e1, e2])
+  _ -> panic $ "gatherUnsets': " <> show expr
 
 -- | Giving the unevaluated expression is used in the special case it is a
 -- Name, to provide a better error message.
@@ -257,10 +293,10 @@ bcheck e _x = case _x of
 -- | `checkType` works similarly to `check`.
 checkType :: Syntax -> Type -> Syntax -> Maybe EvaluationError
 checkType e a _x = case (_x, a) of
-  (Bool x, TBool) -> Nothing
-  (Int x, TInt) -> Nothing
-  (Decimal x, TDecimal) -> Nothing
-  (String x, TString) -> Nothing
+  (Bool _, TBool) -> Nothing
+  (Int _, TInt) -> Nothing
+  (Decimal _, TDecimal) -> Nothing
+  (String _, TString) -> Nothing
   (String x, TEnum xs) | x `elem` xs -> Nothing
   (Object _, TObject) -> Nothing
   _ -> case e of
@@ -284,7 +320,10 @@ checkType e a _x = case (_x, a) of
 -- evaluation time).
 -- TODO Raise an error when a user input is given for fixed rule (i.e. not an
 -- Unset).
+{-
+validate :: ()
 validate = undefined
+-}
 
 
 --------------------------------------------------------------------------------
@@ -330,6 +369,11 @@ data Result = Result Syntax | UnsetVariables [Text] | Error [Text] EvaluationErr
 data Input = Input Text Syntax
   deriving Show
 
+isEmptyString :: Input -> Bool
+isEmptyString (Input _ (String s)) = T.null s
+isEmptyString _ = False
+
+isNamedRule :: Rule -> Bool
 isNamedRule (Unset _ _) = True
 isNamedRule (Binding _ _) = True
 isNamedRule _ = False
@@ -340,5 +384,6 @@ isTypeMismatch _ = False
 
 
 --------------------------------------------------------------------------------
+lookupType :: Text -> [(Rule, Maybe Type)] -> Maybe Type
 lookupType name rules = join $ lookup name rules'
   where rules' = map (\(rule, mtype) -> (rName rule, mtype)) rules

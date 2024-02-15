@@ -10,7 +10,7 @@ import Control.Lens (makeLenses)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.List (head)
-import qualified Data.Text as T
+import Data.String (String)
 import qualified Data.Text.Encoding as T
 import Protolude hiding (head, Handler, Type)
 import Snap.Core
@@ -33,7 +33,6 @@ import qualified Text.Blaze.Html5 as H
 import Forming.Core
 import Forming.IO (parseInput)
 import Forming.Html
-import Forming.Syntax (Syntax(..))
 import Forming.Type (Type)
 
 
@@ -48,6 +47,7 @@ makeLenses ''App
 -- program by an environment variable. During development, it can also be set
 -- manually to ../design to provide the static/ files.
 {-# NOINLINE _FORMING_SITE_DIR #-}
+_FORMING_SITE_DIR :: String
 _FORMING_SITE_DIR = unsafePerformIO $ getEnv "FORMING_SITE_DIR"
 
 
@@ -93,6 +93,7 @@ appInit cs =
   description = "A simple HTTP server for Forming"
 
 -- TODO Validate slugs are slugs.
+makeRoute :: Computation -> [(ByteString, Handler App App ())]
 makeRoute c =
   [ (B.concat ["/examples/", T.encodeUtf8 (cSlug c)], ifTop $ showFormPage c)
   , (B.concat ["/examples/", T.encodeUtf8 (cSlug c), "/ view"], ifTop $ showFormDocPage c)
@@ -101,8 +102,10 @@ makeRoute c =
 
 
 ------------------------------------------------------------------------------
+serveDirectory' :: FilePath -> Handler App App ()
 serveDirectory' = serveDirectory . (_FORMING_SITE_DIR </>)
 
+serveFile' :: FilePath -> Handler App App ()
 serveFile' = serveFile . (_FORMING_SITE_DIR </>)
 
 showAboutPage :: Handler App App ()
@@ -150,10 +153,6 @@ makeInputsFromParams unsets params = Right (Nothing,
       let mtype = lookupType (T.decodeUtf8 k) unsets
       in Input (T.decodeUtf8 k) (parseInput mtype . T.decodeUtf8 $ head v))
     (M.toList params))
-
-isEmptyString :: Input -> Bool
-isEmptyString (Input _ (String s)) = T.null s
-isEmptyString _ = False
 
 
 ----------------------------------------------------------------------

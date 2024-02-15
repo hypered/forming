@@ -86,7 +86,7 @@ execute f s = do
           let comp = Computation "TODO" "TODO" "main" rules
           f comp
         Left err -> print err
-      Left f -> putStrLn $ showFailure f
+      Left err -> putStrLn $ showFailure err
     Left err -> putStrLn $ "indentation error: " ++ show err
 
 
@@ -103,16 +103,16 @@ defaultMain cs = do
 
     Servant' -> runServant cs
 
-    Run' slug r -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
-      Just c -> runComputation c r
+    Run' slug mode -> case lookup slug (map (\c -> (cSlug c, c)) cs) of
+      Just c -> runComputation c mode
       Nothing -> do
         putStrLn @Text "ERROR: the given computation slug doesn't exist."
         exitFailure
 
 defaultMainOne :: Computation -> IO ()
 defaultMainOne c = do
-  r <- A.execParser parserRunInfo
-  runComputation c r
+  mode <- A.execParser parserRunInfo
+  runComputation c mode
 
 
 --------------------------------------------------------------------------------
@@ -127,6 +127,7 @@ runComputation c@Computation{..} mode = case mode of
       UnsetVariables names -> printUnsetVariables names
       Error _ (NoSuchRule _) -> putStrLn ("The rule \"" <> cMain <> "\" doesn't exist.")
       Result _ -> putStrLn @Text "This computation doesn't require any user input."
+      x -> panic $ "runComputation: " <> show x
 
   -- Generate an HTML page with technical comments.
   -- This uses Hypered's design system Haskell code.

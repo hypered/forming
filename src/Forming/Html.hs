@@ -33,6 +33,7 @@ runWithInputs' Computation{..} mis = case mis of
     H.code . H.text . show $ err
     -- TODO 400 Bad Request, possibly 500 if the form is invalid
 
+printUnsetVariables' :: [Text] -> Html
 printUnsetVariables' names = do
   H.code "This computation expects the following user inputs:\n"
   mapM_ (H.code . H.text . ("  " <>)) names
@@ -137,7 +138,9 @@ htmlInput (Binding{..}, mtype) = do
               ! A.id iden
               ! A.type_ "text"
               ! A.placeholder ""
+htmlInput x = panic $ "htmlInput: " <> show x
 
+htmlType :: Type -> Html
 htmlType t = H.span ! A.class_ "silver fw1 ml1" $ H.code $ H.toHtml $
   case t of
     TBool -> "Bool"
@@ -153,7 +156,7 @@ formDocPage :: Computation -> Html
 formDocPage c = document "Reesd" $ pageComputationDoc c
 
 pageComputationDoc :: Computation -> Html
-pageComputationDoc c@Computation{..} = do
+pageComputationDoc Computation{..} = do
   H.header navigationForming
   H.span $ do
     H.a ! A.href (H.toValue @Text "/examples")
@@ -213,6 +216,7 @@ document' center title body = do
         H.div ! A.class_ "flex flex-column justify-between min-height-vh-100 mw8 center pa4 lh-copy" $
           body
 
+navigationForming :: Html
 navigationForming =
   nav $
     H.div $ do

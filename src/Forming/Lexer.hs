@@ -3,6 +3,7 @@ module Forming.Lexer where
 
 import qualified Data.Decimal as Decimal
 import Data.List (head)
+import Data.String (String)
 import qualified Data.Text as T
 import GHC.Exts (IsString(..))
 import Forming.Type (Type)
@@ -51,24 +52,31 @@ instance Syntactical.Token Token where
   consider _ _ = False
 
 -- Rewrite the sub-expressions as we apply the operator.
+myOperator :: Syntactical.Token a => Op a -> [SExpr Token] -> SExpr Token
 myOperator o as = case pts of
   "()" -> case as of
-    [List [Atom (Token Internal ","),a,b]] ->
+    [List [Atom (Token Internal ","), _, _]] ->
       tuple [] (head as)
     [as'] -> as'
+    _ -> panic $ "myOperator: " <> show as
   "[]" -> case as of
     [as'] -> list "," [Atom (Token Internal "list")] as'
+    _ -> panic $ "myOperator: " <> show as
   "{}" -> case as of
     [as'] -> list ";" [Atom (Token Internal "declarations")] as'
+    _ -> panic $ "myOperator: " <> show as
   "``" -> case as of
     [a,b,c] -> List [b,a,c]
+    _ -> panic $ "myOperator: " <> show as
   _ -> List $ Atom (Token Internal $ T.pack pts) : as
   where pts = concatMap toString $ symbols o
 
+tuple :: [SExpr Token] -> SExpr Token -> SExpr Token
 tuple xs (List [Atom (Token Internal ","),a,b]) = tuple (a:xs) b
 tuple xs b = List (a : reverse (b:xs))
   where a = Atom (Token Internal $ "," <> show (length xs + 1))
 
+list :: Text -> [SExpr Token] -> SExpr Token -> SExpr Token
 list c xs (List [Atom (Token Internal c'),a,b]) | c == c' = list c (a:xs) b
 list _ xs b = List (reverse (b:xs))
 
@@ -90,6 +98,7 @@ source = do
 keywords :: [Text]
 keywords = words "let where of"
 
+tokenize :: String -> Either ParseError [Token]
 tokenize = strides' atom intro "{" "}" ";"
 
 -- Parse an atom.
@@ -100,8 +109,8 @@ atom = empty <|> str <|> ssym <|> sym
 intro :: P Token
 intro = do
   src <- source
-  str <- choice (map (string . T.unpack) keywords)
-  return $ Token src $ T.pack str
+  s <- choice (map (string . T.unpack) keywords)
+  return $ Token src $ T.pack s
 
 -- Parse a symbol. A symbol is any consecutive list of non-blank
 -- characters except for `,()⟨⟩[], which are each a single symbol.

@@ -85,7 +85,7 @@ parseExpression expr = case expr of
     return (Syntax.Decimal a)
   Atom (String _ a) -> do
     return (Syntax.String a)
-  Atom (Type _ a) -> do
+  Atom (Type _ _) -> do
     panic "A type should only appear as an annotation."
     -- ... which is parsed directly below.
   List [Atom (Token _ "ifthenelse"), a, b, c] -> do
@@ -105,11 +105,13 @@ parseExpression expr = case expr of
     ":" -> do
       a' <- parseExpression a
       return (Syntax.Annotation a' b)
+    _ -> panic $ "parseExpression: " <> show op
   List [Atom (Token _ op), a, List (Atom (Token src "|") : rest)] -> case op of
     ":" -> do
       a' <- parseExpression a
       b <- parseEnumeration (List (Atom (Token src "|") : rest))
       return (Syntax.Annotation a' (Type.TEnum b))
+    _ -> panic $ "parseExpression: " <> show op
   List [Atom (Token _ op), a, b] -> do
     op' <- case op of
       "+" -> return Syntax.Add

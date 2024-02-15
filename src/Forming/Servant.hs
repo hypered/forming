@@ -21,7 +21,7 @@ import           Text.Blaze.Html5 ( Html )
 -- | This is the main function of this module. It runs a Warp server, serving
 -- our `App` API definition.
 runServant :: [Computation] -> IO ()
-runServant cs =
+runServant _ =
   Warp.run 9000 waiApp
  where
   waiApp = serve
