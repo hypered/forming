@@ -10,6 +10,7 @@ import Protolude hiding (evaluate, Type)
 import Text.Blaze.Html5 (Html, (!))
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+import Text.Pretty.Simple (pShowNoColor)
 
 
 --------------------------------------------------------------------------------
@@ -24,7 +25,7 @@ runWithInputs' Computation{..} mis = case mis of
         -- TODO 400 Bad Request
       Result x -> do
         H.code "Result:"
-        H.code . H.text . show $ x
+        H.pre $ H.code . H.lazyText . pShowNoColor $ x
       Error stack err -> do
         H.code "ERROR:"
         H.code . H.text . show $ (stack, err)
@@ -176,11 +177,11 @@ pageComputationDoc Computation{..} = do
   H.code . H.pre $
     case gatherUnsets Nothing cMain cRules of
       Left err -> panic (show err)
-      Right unsets -> mapM_ (H.toHtml . (++ "\n") . show) unsets
+      Right unsets -> mapM_ (H.lazyText . (<> "\n") . pShowNoColor) unsets
   H.div $ do
     "Rules:"
   H.code . H.pre $
-    mapM_ (H.toHtml . (++ "\n") . show) cRules
+    mapM_ (H.lazyText . (<> "\n") . pShowNoColor) cRules
 
 
 ----------------------------------------------------------------------

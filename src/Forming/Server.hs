@@ -29,6 +29,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import System.FilePath ((</>))
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import qualified Text.Blaze.Html5 as H
+import Text.Pretty.Simple (pShowNoColor)
 
 import Forming.Core
 import Forming.IO (parseInput)
@@ -138,7 +139,7 @@ submitHandler c = do
       writeLazyText . renderHtml $ document "Forming" $ do
         H.header navigationForming
         H.code . H.text $ cName c
-        H.code . H.text $ show params
+        H.pre . H.code . H.lazyText $ pShowNoColor params
         runWithInputs' c $ makeInputsFromParams unsets params
 
 -- I guess I can use `head` here since I assume getParams returns a list only

@@ -28,6 +28,7 @@ library
                      , lens
                      , optparse-applicative
                      , parsec
+                     , pretty-simple
                      , process
                      , protolude
                      , scientific
