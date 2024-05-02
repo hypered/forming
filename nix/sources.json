@@ -5,10 +5,10 @@
         "homepage": "https://hypered.design",
         "owner": "hypered",
         "repo": "design",
-        "rev": "d5fb31d222eb8d784cb00b88d30cb862498d6419",
-        "sha256": "11yrra4yyjvb2d80xbcwk8vkp4g06g89i76i5hpx636c6va3gmlz",
+        "rev": "f65b8c2a4b7dc19b7a29a0b6efcaeeea7fe33315",
+        "sha256": "1g15rp502i7wqg06gbp6na7d3y0i9y7gdyzdayj219dxdgpc54cp",
         "type": "tarball",
-        "url": "https://github.com/hypered/design/archive/d5fb31d222eb8d784cb00b88d30cb862498d6419.tar.gz",
+        "url": "https://github.com/hypered/design/archive/f65b8c2a4b7dc19b7a29a0b6efcaeeea7fe33315.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
@@ -53,10 +53,10 @@
         "homepage": "",
         "owner": "noteed",
         "repo": "syntactical",
-        "rev": "117dac5fd06ee5837d000197ee3ea8057a068705",
-        "sha256": "11mgndys9n1y6bdn2nqipj0ppplhbglxbqqlnw3bsm79cdf901mx",
+        "rev": "36a592fa458a7fd9f3508b4ffc50f71f765148f2",
+        "sha256": "12ana1q1w8dxv596c13z6bp3m99i9j25a8r78lyna5bfcz5lfrh0",
         "type": "tarball",
-        "url": "https://github.com/noteed/syntactical/archive/117dac5fd06ee5837d000197ee3ea8057a068705.tar.gz",
+        "url": "https://github.com/noteed/syntactical/archive/36a592fa458a7fd9f3508b4ffc50f71f765148f2.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
